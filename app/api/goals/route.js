@@ -18,14 +18,20 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const body = await request.json(); // { monthKey, revenueTarget, occupancyTarget }
+    const body = await request.json();
     const sb = supabaseAdmin();
-    const { error } = await sb.from('goals').upsert({
+    const payload = {
       month_key: body.monthKey,
-      revenue_target: body.revenueTarget,
-      occupancy_target: body.occupancyTarget,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'month_key' });
+    };
+    if (body.revenueTarget !== undefined) payload.revenue_target = body.revenueTarget;
+    if (body.occupancyTarget !== undefined) payload.occupancy_target = body.occupancyTarget;
+    if (body.professionalTargets !== undefined) payload.professional_targets = body.professionalTargets;
+    if (body.serviceMixTarget !== undefined) payload.service_mix_target = body.serviceMixTarget;
+    if (body.newPatientsTarget !== undefined) payload.new_patients_target = body.newPatientsTarget;
+    if (body.noshowRateTarget !== undefined) payload.noshow_rate_target = body.noshowRateTarget;
+
+    const { error } = await sb.from('goals').upsert(payload, { onConflict: 'month_key' });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (err) {

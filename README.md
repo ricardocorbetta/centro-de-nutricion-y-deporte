@@ -1,83 +1,89 @@
-# Panel de Ocupación & Facturación — Centro de Nutrición y Deporte
+# Panel de gestión — Centro de Nutrición y Deporte
 
-App Next.js + Supabase. Esta versión incluye el rediseño visual (estética
-tipo app de gestión de salud, con la paleta de marca de CND) y funciones
-nuevas: simulador de escenarios, objetivos comerciales por mes, y carga
-manual de meses sin CSV.
+App Next.js + Supabase. Login con roles (Dirección / Secretaría), caja
+diaria, comisiones, recordatorios por WhatsApp, recibos imprimibles, y
+ahora un **link público de reserva de turnos**, independiente de drApp.
 
-## Qué cambió en esta versión
+## Qué hay de nuevo en esta versión: reserva pública
 
-- **Rediseño completo**: fondo claro, tarjetas redondeadas con sombra suave,
-  navegación por secciones arriba, tipografía Inter. Mantiene los colores
-  de marca de CND (teal + arena) pero con un lenguaje visual de app de
-  gestión, no de reporte editorial.
-- **Simulador de escenarios** (`#simulador`): sliders de ocupación objetivo,
-  consultorios, horas por semana y ajuste de tarifas — muestra la
-  facturación proyectada y permite guardarla como objetivo del mes con un
-  click.
-- **Objetivos comerciales** (dentro de `#capacidad`): definís una meta de
-  facturación y de ocupación por mes, y el panel muestra el progreso real
-  contra esa meta. Se guarda en una tabla nueva (`goals`) en Supabase.
-- **Carga manual de meses sin CSV** (botón "Cargar período" → pestaña
-  "Carga manual"): para meses viejos de los que no tenés el export de
-  drManager, cargás los totales a mano (turnos, horas ocupadas, facturación
-  estimada). No tiene desglose por profesional ni mapa de calor, pero sí
-  entra en la facturación y en el gráfico de tendencia mes a mes.
+- **`/reservar`**: página pública (sin login) para que cualquier paciente
+  reserve un turno solo — elige profesional, servicio, fecha, ve los
+  horarios libres y confirma con su nombre y teléfono.
+- La disponibilidad se calcula contra **dos fuentes combinadas**: lo
+  importado desde drManager (los reportes que cargás) + lo reservado por
+  este mismo link, así nunca se pisan dos turnos.
+- Esos turnos reservados por el link entran automáticamente a las
+  estadísticas del panel (ocupación, facturación, agenda de la secretaria)
+  — no hace falta hacer nada más para que se vean reflejados.
+- Los horarios y servicios de cada profesional salen de una tabla de
+  configuración (`profesionales_config` / `servicios_config`) que armé a
+  partir de los turnos reales de septiembre 2026. Si algún horario o
+  servicio cambia, se actualiza directo en Supabase (te paso el SQL si
+  hace falta) — no requiere tocar código ni redeploy.
 
-## Base de datos (ya actualizada)
+### Profesionales configurados hoy
 
-El proyecto de Supabase (`cnd-cipolletti-panel`) ya tiene las tablas nuevas
-aplicadas:
-- `periods` ahora tiene `is_manual` y `manual_summary` (para los meses
-  cargados a mano).
-- `goals`: objetivos por mes (`month_key`, `revenue_target`,
-  `occupancy_target`).
+| Profesional | Días | Horario |
+|---|---|---|
+| Eulalia, Mariana | Lun, Mar, Mié, Vie | 08:00–15:30 |
+| Arias, Sofía Amparo | Lun, Mié, Jue, Vie, Sáb | 09:00–19:40 |
+| Rodriguez, Romina | Mié, Jue | 09:00–18:00 |
+| Ekkert, Eliana | Lun, Sáb | 09:00–17:20 |
+| Zuazo, Mora | Mié, Sáb | 10:00–17:00 |
 
-No hace falta que toques nada de la base — ya está lista.
+(Figueroa y Bello Darrieux no se incluyeron — ya no atienden en la clínica.)
+
+## Resto de las funciones (de la versión anterior)
+
+- **Login** (`/login`): `mariana` / `CND-Directora2026!` (Dirección) y
+  `secretaria` / `CND-Secretaria2026!` (Secretaría) — cambiá estas
+  contraseñas apenas puedas.
+- **Dirección**: panel completo + Caja y comisiones.
+- **Secretaría**: agenda del día/mañana, carga de cobros, recibos,
+  recordatorios por WhatsApp, cierre del día.
+- **Objetivos**: facturación, ocupación, y la base para turnos por
+  profesional / mix de servicios / pacientes nuevos / ausentismo.
+
+## Variables de entorno (4 en total)
+
+| Nombre | Valor |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://jvutndjtqknbliayqkwl.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la del `.env.example` |
+| `SUPABASE_SERVICE_ROLE_KEY` | la sacás de Supabase → Project Settings → API |
+| `SESSION_SECRET` | cualquier cadena larga aleatoria (ej: `openssl rand -hex 32`) |
+
+## Base de datos
+
+Ya está todo creado y cargado en Supabase (`cnd-cipolletti-panel`): las
+tablas de siempre, más `turnos_propios` (reservas del link público),
+`profesionales_config` y `servicios_config` (horarios y servicios por
+profesional). No hace falta tocar nada ahí.
 
 ## Cómo subir esta versión
 
-Esta versión cambia muchos archivos (CSS, page.js, 2 API routes nuevas), así
-que lo más simple es **reemplazar todo el contenido del repo**, no archivo
-por archivo:
+Igual que siempre: reemplazá todo el contenido del repo con lo de este
+zip, commit a `main`, el deploy automático hace el resto (las 4
+environment variables ya deberían estar cargadas de la vez pasada).
 
-1. Borrá todos los archivos del repo en GitHub (o creá el repo de nuevo si
-   preferís empezar limpio).
-2. Descomprimí `panel-cnd-nextjs.zip` y subí todo el contenido con
-   "uploading an existing file" (arrastrando todos los archivos de una).
-3. Commit a `main`. Como ya tenés Vercel conectado con auto-deploy, el
-   deploy nuevo se dispara solo — no hace falta reimportar nada en Vercel
-   ni volver a cargar las environment variables (esas quedan igual).
-4. Esperá el deploy y refrescá el panel.
-
-Si en cambio preferís ir archivo por archivo, los que cambiaron o son
-nuevos son: `app/globals.css`, `app/layout.js`, `app/page.js`,
-`lib/stats.js`, `app/api/bootstrap/route.js`, `app/api/upload/route.js`,
-`app/api/period/[key]/route.js`, y los dos nuevos `app/api/goals/route.js`.
-
-## Estructura del proyecto
+## Estructura del proyecto (resumen de lo nuevo)
 
 ```
 app/
-  page.js                → dashboard completo (topbar, secciones, simulador)
-  globals.css             → estilos, paleta CND, estética tipo app de salud
-  layout.js
-  api/
-    bootstrap/route.js    → GET: config + períodos + pacientes + último período
-    period/[key]/route.js → GET: turnos (o resumen manual) de un período
-    config/route.js       → POST: guarda capacidad/precios
-    upload/route.js       → POST: guarda un período (CSV normal o manual)
-    goals/route.js        → GET/POST: objetivos comerciales por mes
+  reservar/page.js          → formulario público de reserva de turnos
+  api/public/
+    profesionales/route.js   → lista de profesionales + servicios (público)
+    disponibilidad/route.js  → horarios libres para profesional+fecha+servicio
+    reservar/route.js        → confirma la reserva (revalida disponibilidad)
 lib/
-  stats.js                → cálculos: ocupación, facturación, simulador, parser CSV
-  supabaseAdmin.js         → cliente de Supabase server-side
-  logo.js                  → isologo de CND en base64
+  scheduling.js              → generación de horarios y chequeo de superposición
+  mergeEvents.js              → combina turnos importados + turnos_propios por mes
 ```
 
 ## Si algo no anda
 
-- Mismos pasos de siempre: revisá las 3 environment variables en Vercel
-  (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-  `SUPABASE_SERVICE_ROLE_KEY`), y que el deployment más reciente en
-  Vercel diga "Production" con el commit hash que corresponde al último
-  commit de GitHub.
+- Mismos pasos de siempre para el deploy (revisar el hash de commit y las
+  4 environment variables).
+- Si en `/reservar` no aparece ningún horario libre para nadie: puede ser
+  que la fecha elegida caiga en un día que ese profesional no atiende
+  (revisá la tabla de arriba), o que ya esté completo ese día.

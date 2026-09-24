@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { DEFAULT_PRECIOS } from '../../../lib/stats';
+import { fetchMonthEventsMerged } from '../../../lib/mergeEvents';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,9 +23,9 @@ export async function GET() {
     let latestEvents = [];
     let latestManualSummary = null;
     if (latestKey) {
-      const { data: latest } = await sb.from('periods').select('events, is_manual, manual_summary').eq('month_key', latestKey).single();
-      latestEvents = latest?.events || [];
-      latestManualSummary = latest?.is_manual ? latest.manual_summary : null;
+      const merged = await fetchMonthEventsMerged(sb, latestKey);
+      latestEvents = merged.events;
+      latestManualSummary = merged.manualSummary;
     }
 
     return NextResponse.json({
