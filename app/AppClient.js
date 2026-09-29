@@ -13,6 +13,7 @@ import {
 import SecretariaView from './SecretariaView';
 import CajaComisionesSection from './CajaComisionesSection';
 import ProfesionalesAdmin from './ProfesionalesAdmin';
+import AgendaBuilder from './AgendaBuilder';
 import XenomAdmin from './XenomAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
@@ -234,6 +235,7 @@ function DirectorApp({ name, username, empresa }) {
 }
 
 const SECTIONS = [
+  { id: 'agenda-director', label: 'Agenda' },
   { id: 'resumen', label: 'Resumen' },
   { id: 'capacidad', label: 'Capacidad y objetivo' },
   { id: 'equipo', label: 'Profesionales' },
@@ -281,6 +283,10 @@ function Dashboard({
       </nav>
 
       <div className="wrap">
+        <section id="agenda-director"><div className="card">
+          <AgendaBuilder empresaSlug={empresa?.slug} />
+        </div></section>
+
         {showConfig && (
           <section className="card">
             <ConfigPanel config={config} onConsultoriosChange={onConsultoriosChange}
