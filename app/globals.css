@@ -198,6 +198,8 @@ table.plain td{padding:9px 10px 9px 0; border-bottom:1px solid var(--border); co
 table.plain tr:last-child td{border-bottom:none;}
 table.plain input[type=number], table.plain input[type=text]{width:90px;}
 .tag{font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:999px; background:var(--accent-soft); color:#8A6A34; font-weight:600;}
+.tag.rust{background:var(--rust-soft); color:var(--rust);}
+.tag.gold{background:var(--accent-soft); color:#8A6A34;}
 
 input[type=number], input[type=text], select{
   font-family:var(--sans); font-size:13.5px;

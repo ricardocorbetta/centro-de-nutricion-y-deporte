@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { monthKeyFromEvents, aggregateConsumersWeekly } from '../../../lib/stats';
+import { requireEmpresaSession } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
+  const { session, error } = requireEmpresaSession(request);
+  if (error) return error;
+  const empresaId = session.empresaId;
   try {
     const body = await request.json();
     // body puede traer:
@@ -18,15 +22,16 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Período inválido (formato esperado AAAA-MM).' }, { status: 400 });
       }
       const summary = { ...body.manualSummary, monthKey };
-      const { error } = await sb.from('periods').upsert({
+      const { error: dbErr } = await sb.from('periods').upsert({
+        empresa_id: empresaId,
         month_key: monthKey,
         events: [],
         event_count: summary.booked || 0,
         is_manual: true,
         manual_summary: summary,
         uploaded_at: new Date().toISOString()
-      }, { onConflict: 'month_key' });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }, { onConflict: 'empresa_id,month_key' });
+      if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
       return NextResponse.json({ ok: true, monthKey, manual: true });
     }
 
@@ -39,23 +44,25 @@ export async function POST(request) {
     }
 
     const { error: periodErr } = await sb.from('periods').upsert({
+      empresa_id: empresaId,
       month_key: monthKey,
       events,
       event_count: events.length,
       is_manual: false,
       manual_summary: null,
       uploaded_at: new Date().toISOString()
-    }, { onConflict: 'month_key' });
+    }, { onConflict: 'empresa_id,month_key' });
 
     if (periodErr) return NextResponse.json({ error: periodErr.message }, { status: 500 });
 
     if (consumers && consumers.length) {
       const agg = aggregateConsumersWeekly(consumers);
-      const { error: consErr } = await sb.from('consumers').update({
+      const { error: consErr } = await sb.from('consumers').upsert({
+        empresa_id: empresaId,
         data: { weekly: agg.weekly, financiadores: agg.financiadores },
         total_count: agg.total_count,
         updated_at: new Date().toISOString()
-      }).eq('id', 1);
+      }, { onConflict: 'empresa_id' });
       if (consErr) return NextResponse.json({ error: consErr.message }, { status: 500 });
     }
 

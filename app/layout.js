@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Centro de Nutrición y Deporte — Panel de Ocupación y Facturación',
-  description: 'Panel de gestión: ocupación de consultorios, facturación estimada y oportunidades de crecimiento.'
+  title: 'Xenom — Plataforma de gestión para centros de nutrición y deporte',
+  description: 'Agenda, caja, comisiones y facturación en un solo panel.'
 };
 
 export default function RootLayout({ children }) {

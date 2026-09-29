@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LOGO_DATA_URI } from '../../lib/logo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -40,9 +39,9 @@ export default function LoginPage() {
         background: '#fff', border: '1px solid #E3EAE7', borderRadius: 16,
         padding: '36px 32px', width: 340, boxShadow: '0 12px 28px -16px rgba(21,39,42,.18)'
       }}>
-        <img src={LOGO_DATA_URI} alt="CND" style={{ height: 34, marginBottom: 22, display: 'block' }} />
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: '#1F7A68', marginBottom: 4 }}>Xenom</div>
         <h1 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 4px', color: '#15272A' }}>Panel de gestión</h1>
-        <p style={{ fontSize: 13, color: '#5C6E70', margin: '0 0 22px' }}>Centro de Nutrición y Deporte</p>
+        <p style={{ fontSize: 13, color: '#5C6E70', margin: '0 0 22px' }}>Plataforma para centros de nutrición y deporte</p>
 
         <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: '#8B9A9B', marginBottom: 6 }}>Usuario</label>
         <input value={username} onChange={e => setUsername(e.target.value)} autoFocus

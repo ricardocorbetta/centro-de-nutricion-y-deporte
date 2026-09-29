@@ -10,21 +10,44 @@ function firstOfMonthISO() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
 }
+function currentMonthKey() {
+  return new Date().toISOString().slice(0, 7);
+}
+function monthRange(monthKey) {
+  const [y, m] = monthKey.split('-').map(Number);
+  const desde = `${monthKey}-01`;
+  const lastDay = new Date(y, m, 0).getDate(); // día 0 del mes siguiente = último día del mes actual
+  const hasta = `${monthKey}-${String(lastDay).padStart(2, '0')}`;
+  return { desde, hasta };
+}
+function buildMonthOptions() {
+  const opts = [];
+  const now = new Date();
+  for (let i = -2; i < 40; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    opts.push(d.toISOString().slice(0, 7));
+  }
+  return opts;
+}
 
 export default function CajaComisionesSection() {
+  const [modo, setModo] = useState('mes'); // 'mes' | 'rango'
+  const [mes, setMes] = useState(currentMonthKey());
   const [desde, setDesde] = useState(firstOfMonthISO());
   const [hasta, setHasta] = useState(todayISO());
   const [resumen, setResumen] = useState(null);
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const monthOptions = buildMonthOptions();
 
-  async function cargar() {
+  async function cargar(desdeArg, hastaArg) {
+    const d = desdeArg || desde, h = hastaArg || hasta;
     setLoading(true);
     setErrorMsg('');
     try {
       const [resRes, cfgRes] = await Promise.all([
-        fetch(`/api/caja-resumen?desde=${desde}&hasta=${hasta}`),
+        fetch(`/api/caja-resumen?desde=${d}&hasta=${h}`),
         fetch('/api/comisiones-config')
       ]);
       const resData = await resRes.json();
@@ -39,7 +62,18 @@ export default function CajaComisionesSection() {
     }
   }
 
-  useEffect(() => { cargar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const { desde: d, hasta: h } = monthRange(mes);
+    setDesde(d); setHasta(h);
+    cargar(d, h);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleMesChange(m) {
+    setMes(m);
+    const { desde: d, hasta: h } = monthRange(m);
+    setDesde(d); setHasta(h);
+    cargar(d, h);
+  }
 
   async function savePct(profesional, pct) {
     setConfig(prev => {
@@ -63,19 +97,43 @@ export default function CajaComisionesSection() {
       <div className="section-head"><span className="dot" /><h2>Caja y comisiones</h2>
         <span className="note">visible solo para dirección</span></div>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 20 }}>
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Desde</label>
-          <input type="date" value={desde} onChange={e => setDesde(e.target.value)} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Hasta</label>
-          <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
-        </div>
-        <button className="icon-btn primary" onClick={cargar}>{loading ? 'Cargando…' : 'Actualizar'}</button>
+      <div className="tabbar">
+        <button className={modo === 'mes' ? 'active' : ''} onClick={() => setModo('mes')}>Por mes</button>
+        <button className={modo === 'rango' ? 'active' : ''} onClick={() => setModo('rango')}>Rango personalizado</button>
       </div>
 
+      {modo === 'mes' ? (
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 20 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Mes de cierre</label>
+            <select className="pill-select" value={mes} onChange={e => handleMesChange(e.target.value)}>
+              {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          {loading && <span style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>Cargando…</span>}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 20 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Desde</label>
+            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Hasta</label>
+            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
+          </div>
+          <button className="icon-btn primary" onClick={() => cargar()}>{loading ? 'Cargando…' : 'Actualizar'}</button>
+        </div>
+      )}
+
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
+
+      {resumen && resumen.cantidadEstimados > 0 && (
+        <div className="gap-callout" style={{ marginBottom: 18 }}>
+          De los {resumen.cantidadCobros} cobros de este período, <b>{resumen.cantidadEstimados}</b> ({fmtMoney(resumen.totalEstimado)}) son
+          estimados a partir de la agenda (sin medio de pago real cargado) — todavía no hay cobros reales cargados por la secretaria para este mes.
+        </div>
+      )}
 
       {resumen && (
         <>

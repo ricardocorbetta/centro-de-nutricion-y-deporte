@@ -17,8 +17,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Usuario o contraseña incorrectos.' }, { status: 401 });
     }
     const user = data[0];
-    const token = signSession({ userId: user.id, username: user.username, role: user.role, name: user.name });
-    const res = NextResponse.json({ ok: true, role: user.role, name: user.name, username: user.username });
+
+    let empresa = null;
+    if (user.empresa_id) {
+      const { data: empresaRow } = await sb.from('empresas').select('id, slug, nombre, nombre_corto, ciudad, logo_url, color_primario, color_acento, activo')
+        .eq('id', user.empresa_id).single();
+      if (empresaRow && !empresaRow.activo) {
+        return NextResponse.json({ error: 'Esta cuenta está suspendida. Contactá a Xenom.' }, { status: 403 });
+      }
+      empresa = empresaRow;
+    }
+
+    const token = signSession({
+      userId: user.id, username: user.username, role: user.role, name: user.name,
+      empresaId: user.empresa_id || null,
+      esAdminPlataforma: !!user.es_admin_plataforma,
+      empresaSlug: empresa?.slug || null,
+      empresaNombre: empresa?.nombre || null,
+      empresaNombreCorto: empresa?.nombre_corto || null,
+      empresaCiudad: empresa?.ciudad || null,
+      empresaLogoUrl: empresa?.logo_url || null,
+      empresaColorPrimario: empresa?.color_primario || null,
+      empresaColorAcento: empresa?.color_acento || null
+    });
+    const res = NextResponse.json({
+      ok: true, role: user.role, name: user.name, username: user.username,
+      esAdminPlataforma: !!user.es_admin_plataforma,
+      empresa: empresa ? { slug: empresa.slug, nombre: empresa.nombre, nombreCorto: empresa.nombre_corto, ciudad: empresa.ciudad, logoUrl: empresa.logo_url, colorPrimario: empresa.color_primario, colorAcento: empresa.color_acento } : null
+    });
     res.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: SESSION_MAX_AGE
     });

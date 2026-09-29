@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LOGO_DATA_URI } from '../../lib/logo';
+import { LOGO_DATA_URI } from '../../../lib/logo';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
-export default function ReservarPage() {
+export default function ReservarPage({ params }) {
+  const slug = params.slug;
+  const [empresa, setEmpresa] = useState(null);
   const [profesionales, setProfesionales] = useState([]);
   const [loadingProfs, setLoadingProfs] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [notFound, setNotFound] = useState(false);
 
   const [profesional, setProfesional] = useState('');
   const [servicio, setServicio] = useState('');
@@ -23,12 +26,16 @@ export default function ReservarPage() {
   const [confirmado, setConfirmado] = useState(false);
 
   useEffect(() => {
-    fetch('/api/public/profesionales')
+    fetch('/api/public/profesionales?empresa=' + encodeURIComponent(slug))
       .then(r => r.json())
-      .then(data => { if (!data.error) setProfesionales(data.profesionales || []); else setErrorMsg(data.error); })
+      .then(data => {
+        if (data.error) { setNotFound(true); setErrorMsg(data.error); return; }
+        setEmpresa(data.empresa);
+        setProfesionales(data.profesionales || []);
+      })
       .catch(e => setErrorMsg(e.message))
       .finally(() => setLoadingProfs(false));
-  }, []);
+  }, [slug]);
 
   const profData = profesionales.find(p => p.nombre === profesional);
   const servicioData = profData?.servicios.find(s => s.nombre === servicio);
@@ -37,12 +44,12 @@ export default function ReservarPage() {
     if (!profesional || !fecha || !servicioData) { setHorarios([]); return; }
     setLoadingHorarios(true);
     setHora('');
-    fetch(`/api/public/disponibilidad?profesional=${encodeURIComponent(profesional)}&fecha=${fecha}&duracion=${servicioData.duracion}`)
+    fetch(`/api/public/disponibilidad?empresa=${encodeURIComponent(slug)}&profesional=${encodeURIComponent(profesional)}&fecha=${fecha}&duracion=${servicioData.duracion}`)
       .then(r => r.json())
       .then(data => setHorarios(data.horarios || []))
       .catch(() => setHorarios([]))
       .finally(() => setLoadingHorarios(false));
-  }, [profesional, fecha, servicioData]);
+  }, [profesional, fecha, servicioData, slug]);
 
   async function confirmar() {
     setConfirmando(true);
@@ -51,7 +58,7 @@ export default function ReservarPage() {
       const res = await fetch('/api/public/reservar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profesional, fecha, hora, servicio, duracion: servicioData.duracion,
+          empresa: slug, profesional, fecha, hora, servicio, duracion: servicioData.duracion,
           pacienteNombre, pacienteTelefono
         })
       });
@@ -67,9 +74,20 @@ export default function ReservarPage() {
 
   const puedeConfirmar = profesional && servicio && fecha && hora && pacienteNombre.trim();
 
+  if (notFound) {
+    return (
+      <Shell empresa={null}>
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <h2 style={{ fontSize: 16 }}>No encontramos este centro</h2>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Revisá el link de reserva que te compartieron.</p>
+        </div>
+      </Shell>
+    );
+  }
+
   if (confirmado) {
     return (
-      <Shell>
+      <Shell empresa={empresa}>
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <h2 style={{ fontSize: 18, marginBottom: 8 }}>¡Turno reservado!</h2>
           <p style={{ color: 'var(--ink-soft)' }}>
@@ -85,7 +103,7 @@ export default function ReservarPage() {
   }
 
   return (
-    <Shell>
+    <Shell empresa={empresa}>
       <div className="card">
         <div className="section-head"><span className="dot" /><h2>Reservar un turno</h2></div>
 
@@ -151,16 +169,16 @@ export default function ReservarPage() {
   );
 }
 
-function Shell({ children }) {
+function Shell({ empresa, children }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif" }}>
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-brand">
-            <img src={LOGO_DATA_URI} alt="CND" />
+            <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
             <div className="topbar-title">
               <span className="app-name">Reservar turno</span>
-              <span className="app-sub">Centro de Nutrición y Deporte · Cipolletti</span>
+              <span className="app-sub">{empresa ? `${empresa.nombre}${empresa.ciudad ? ' · ' + empresa.ciudad : ''}` : ''}</span>
             </div>
           </div>
         </div>

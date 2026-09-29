@@ -12,13 +12,16 @@ import {
 } from '../lib/stats';
 import SecretariaView from './SecretariaView';
 import CajaComisionesSection from './CajaComisionesSection';
+import ProfesionalesAdmin from './ProfesionalesAdmin';
+import XenomAdmin from './XenomAdmin';
 
-export default function AppClient({ role, name, username }) {
-  if (role === 'secretaria') return <SecretariaView name={name} username={username} />;
-  return <DirectorApp name={name} username={username} />;
+export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
+  if (esAdminPlataforma) return <XenomAdmin name={name} username={username} />;
+  if (role === 'secretaria') return <SecretariaView name={name} username={username} empresa={empresa} />;
+  return <DirectorApp name={name} username={username} empresa={empresa} />;
 }
 
-function DirectorApp({ name, username }) {
+function DirectorApp({ name, username, empresa }) {
   const router = useRouter();
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -136,11 +139,21 @@ function DirectorApp({ name, username }) {
   }
 
   async function saveGoal(monthKey, revenueTarget, occupancyTarget) {
-    setGoals(prev => ({ ...prev, [monthKey]: { month_key: monthKey, revenue_target: revenueTarget, occupancy_target: occupancyTarget } }));
+    setGoals(prev => ({ ...prev, [monthKey]: { ...prev[monthKey], month_key: monthKey, revenue_target: revenueTarget, occupancy_target: occupancyTarget } }));
     try {
       await fetch('/api/goals', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monthKey, revenueTarget, occupancyTarget })
+      });
+    } catch (e) {}
+  }
+
+  async function saveProfessionalTargets(monthKey, professionalTargets) {
+    setGoals(prev => ({ ...prev, [monthKey]: { ...prev[monthKey], month_key: monthKey, professional_targets: professionalTargets } }));
+    try {
+      await fetch('/api/goals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthKey, professionalTargets })
       });
     } catch (e) {}
   }
@@ -207,7 +220,7 @@ function DirectorApp({ name, username }) {
   return (
     <Dashboard
       config={config} periods={periods} currentMonth={currentMonth} setCurrentMonth={setCurrentMonth}
-      stats={stats} trendStats={trendStats} goals={goals} saveGoal={saveGoal}
+      stats={stats} trendStats={trendStats} goals={goals} saveGoal={saveGoal} saveProfessionalTargets={saveProfessionalTargets}
       showConfig={showConfig} setShowConfig={setShowConfig}
       showUpload={showUpload} setShowUpload={setShowUpload}
       uploadTab={uploadTab} setUploadTab={setUploadTab}
@@ -215,7 +228,7 @@ function DirectorApp({ name, username }) {
       onPrecioChange={handlePrecioChange}
       fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
       onUploadCSV={handleUploadCSV} onManualSave={handleManualSave} uploadStatus={uploadStatus}
-      name={name} username={username} onLogout={handleLogout}
+      name={name} username={username} onLogout={handleLogout} empresa={empresa}
     />
   );
 }
@@ -224,6 +237,7 @@ const SECTIONS = [
   { id: 'resumen', label: 'Resumen' },
   { id: 'capacidad', label: 'Capacidad y objetivo' },
   { id: 'equipo', label: 'Profesionales' },
+  { id: 'objetivos-equipo', label: 'Objetivos por profesional' },
   { id: 'horarios', label: 'Horarios' },
   { id: 'pacientes', label: 'Pacientes' },
   { id: 'simulador', label: 'Simulador' },
@@ -232,21 +246,21 @@ const SECTIONS = [
 ];
 
 function Dashboard({
-  config, periods, currentMonth, setCurrentMonth, stats, trendStats, goals, saveGoal,
+  config, periods, currentMonth, setCurrentMonth, stats, trendStats, goals, saveGoal, saveProfessionalTargets,
   showConfig, setShowConfig, showUpload, setShowUpload, uploadTab, setUploadTab,
   onConsultoriosChange, onHorasChange, onPrecioChange,
   fileEventsRef, fileConsumersRef, onUploadCSV, onManualSave, uploadStatus,
-  name, username, onLogout
+  name, username, onLogout, empresa
 }) {
   return (
     <>
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-brand">
-            <img src={LOGO_DATA_URI} alt="CND" />
+            <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
             <div className="topbar-title">
               <span className="app-name">Panel de Ocupación &amp; Facturación</span>
-              <span className="app-sub">Centro de Nutrición y Deporte · Cipolletti</span>
+              <span className="app-sub">{empresa?.nombre || ''}</span>
             </div>
           </div>
           <div className="topbar-spacer" />
@@ -263,6 +277,7 @@ function Dashboard({
       <nav className="section-nav">
         {SECTIONS.map(s => <a key={s.id} href={'#' + s.id}>{s.label}</a>)}
         <a href="#caja">Caja y comisiones</a>
+        <a href="#profesionales-admin">Profesionales (horarios)</a>
       </nav>
 
       <div className="wrap">
@@ -293,6 +308,12 @@ function Dashboard({
               <section id="equipo"><div className="card"><ResourceServiceSection stats={stats} /></div></section>
             )}
             {!stats.isManual && (
+              <section id="objetivos-equipo"><div className="card">
+                <ObjetivosEquipoSection stats={stats} goal={goals[currentMonth]}
+                  onSave={(profTargets) => saveProfessionalTargets(currentMonth, profTargets)} />
+              </div></section>
+            )}
+            {!stats.isManual && (
               <section id="horarios"><div className="card"><HeatmapSection stats={stats} /></div></section>
             )}
             <section id="pacientes"><div className="card"><StatusPatientsSection stats={stats} /></div></section>
@@ -310,7 +331,9 @@ function Dashboard({
 
         <section id="caja"><div className="card"><CajaComisionesSection /></div></section>
 
-        <footer>Xenom — panel de gestión para Centro de Nutrición y Deporte · datos en Supabase, actualizables desde este panel</footer>
+        <section id="profesionales-admin"><div className="card"><ProfesionalesAdmin /></div></section>
+
+        <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
       </div>
     </>
   );
@@ -714,6 +737,63 @@ function RecoSection({ stats: s }) {
           </div>
         ))}
       </div>
+    </>
+  );
+}
+
+function ObjetivosEquipoSection({ stats: s, goal, onSave }) {
+  const profesionales = Object.keys(s.porProfesional || {}).sort();
+  const targets = goal?.professional_targets || {};
+  const [local, setLocal] = useState(targets);
+
+  useEffect(() => { setLocal(goal?.professional_targets || {}); }, [goal?.professional_targets]);
+
+  function updateField(prof, field, value) {
+    const next = { ...local, [prof]: { ...local[prof], [field]: parseFloat(value) || 0 } };
+    setLocal(next);
+  }
+  function commit() { onSave(local); }
+
+  return (
+    <>
+      <div className="section-head"><span className="dot" /><h2>Objetivos por profesional</h2>
+        <span className="note">turnos y facturación que se buscan este mes, vs. lo real</span></div>
+      <table className="plain">
+        <thead>
+          <tr>
+            <th>Profesional</th>
+            <th>Turnos objetivo</th><th>Turnos real</th><th>%</th>
+            <th>Facturación objetivo</th><th>Facturación real</th><th>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {profesionales.map(p => {
+            const actualTurnos = s.porProfesional[p]?.count || 0;
+            const actualRevenue = s.porProfesional[p]?.revenue || 0;
+            const t = local[p] || {};
+            const pctTurnos = t.turnos ? Math.min(999, (actualTurnos / t.turnos) * 100) : null;
+            const pctRevenue = t.facturacion ? Math.min(999, (actualRevenue / t.facturacion) * 100) : null;
+            return (
+              <tr key={p}>
+                <td>{p}</td>
+                <td><input type="number" style={{ width: 70 }} value={t.turnos ?? ''}
+                  onChange={e => updateField(p, 'turnos', e.target.value)} onBlur={commit} /></td>
+                <td>{actualTurnos}</td>
+                <td style={{ color: pctTurnos == null ? 'var(--ink-faint)' : (pctTurnos >= 100 ? 'var(--primary)' : 'var(--rust)') }}>
+                  {pctTurnos == null ? '—' : pctTurnos.toFixed(0) + '%'}
+                </td>
+                <td><input type="number" step="10000" style={{ width: 100 }} value={t.facturacion ?? ''}
+                  onChange={e => updateField(p, 'facturacion', e.target.value)} onBlur={commit} /></td>
+                <td>{fmtMoney(actualRevenue)}</td>
+                <td style={{ color: pctRevenue == null ? 'var(--ink-faint)' : (pctRevenue >= 100 ? 'var(--primary)' : 'var(--rust)') }}>
+                  {pctRevenue == null ? '—' : pctRevenue.toFixed(0) + '%'}
+                </td>
+              </tr>
+            );
+          })}
+          {!profesionales.length && <tr><td colSpan={7} style={{ color: 'var(--ink-faint)' }}>No hay profesionales con turnos en este período.</td></tr>}
+        </tbody>
+      </table>
     </>
   );
 }

@@ -2,17 +2,21 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { DEFAULT_PRECIOS } from '../../../lib/stats';
 import { fetchMonthEventsMerged } from '../../../lib/mergeEvents';
+import { requireEmpresaSession } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
+  const { session, error } = requireEmpresaSession(request);
+  if (error) return error;
   try {
     const sb = supabaseAdmin();
+    const empresaId = session.empresaId;
 
     const [{ data: configRow }, { data: periodRows }, { data: consumerRow }] = await Promise.all([
-      sb.from('config').select('*').eq('id', 1).single(),
-      sb.from('periods').select('month_key, event_count, uploaded_at, is_manual').order('month_key', { ascending: false }),
-      sb.from('consumers').select('*').eq('id', 1).single()
+      sb.from('config').select('*').eq('empresa_id', empresaId).single(),
+      sb.from('periods').select('month_key, event_count, uploaded_at, is_manual').eq('empresa_id', empresaId).order('month_key', { ascending: false }),
+      sb.from('consumers').select('*').eq('empresa_id', empresaId).single()
     ]);
 
     const config = configRow
@@ -23,7 +27,7 @@ export async function GET() {
     let latestEvents = [];
     let latestManualSummary = null;
     if (latestKey) {
-      const merged = await fetchMonthEventsMerged(sb, latestKey);
+      const merged = await fetchMonthEventsMerged(sb, empresaId, latestKey);
       latestEvents = merged.events;
       latestManualSummary = merged.manualSummary;
     }
