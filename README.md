@@ -70,7 +70,43 @@ consulta SQL puntual; lo hago yo si hace falta).
   simulador de escenarios, tendencia mes a mes, mapa de calor de horarios,
   y un editor de profesionales (horarios/servicios) sin tocar SQL.
 
-## Variables de entorno (4 en total, sin cambios)
+## Google Calendar (opcional)
+
+Cada clínica puede conectar un Google Calendar propio para que cada turno
+que se cargue (desde la agenda interna o desde el link público de reserva)
+se agende ahí solo, y se borre solo al cancelarse. Usa un **Service
+Account** de Google (sin que nadie tenga que "iniciar sesión con Google" —
+es un usuario técnico que solo puede escribir en los calendarios que vos
+le compartís).
+
+**Esto lo tenés que armar vos una sola vez** (es a nivel de toda la
+plataforma, no por clínica — después cada clínica solo comparte su
+calendario con ese mismo Service Account):
+
+1. Entrá a [console.cloud.google.com](https://console.cloud.google.com),
+   creá un proyecto nuevo (o usá uno existente).
+2. "APIs y servicios" → "Biblioteca" → buscá **Google Calendar API** →
+   Habilitar.
+3. "APIs y servicios" → "Credenciales" → "Crear credenciales" → **Cuenta
+   de servicio**. Le ponés un nombre (ej: "xenom-calendar") y la creás.
+4. Entrá a esa cuenta de servicio → pestaña "Claves" → "Agregar clave" →
+   "Crear clave nueva" → JSON. Se descarga un archivo `.json`.
+5. De ese archivo, copiás dos valores a las Environment Variables de
+   Vercel:
+   - `client_email` → va en `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `private_key` → va en `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (pegalo
+     completo, con los `\n` incluidos, entre comillas)
+6. Redeploy. A partir de ahí, cada clínica conecta su propio calendario
+   desde su panel de dirección (⚙ Configurar → Google Calendar): ahí ve
+   el email de esa cuenta de servicio, lo comparte desde Google Calendar
+   con permiso "Hacer cambios en los eventos", y pega el ID de su
+   calendario.
+
+Si estas dos variables no están cargadas, esa sección simplemente le
+avisa a cada clínica que la funcionalidad no está disponible — el resto
+del sistema sigue funcionando normal.
+
+## Variables de entorno (6 en total)
 
 | Nombre | Valor |
 |---|---|
@@ -78,6 +114,8 @@ consulta SQL puntual; lo hago yo si hace falta).
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la del `.env.example` |
 | `SUPABASE_SERVICE_ROLE_KEY` | la sacás de Supabase → Project Settings → API |
 | `SESSION_SECRET` | cualquier cadena larga aleatoria (ej: `openssl rand -hex 32`) |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | opcional — ver sección "Google Calendar" |
+| `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | opcional — ver sección "Google Calendar" |
 
 Todos los clientes nuevos comparten el mismo proyecto de Supabase y el
 mismo deploy de Vercel — no hace falta crear nada nuevo por cliente.
@@ -108,10 +146,16 @@ app/
     profesionales/route.js         → lista de profesionales + servicios (requiere ?empresa=slug)
     disponibilidad/route.js        → horarios libres (requiere ?empresa=slug)
     reservar/route.js              → confirma la reserva (requiere empresa=slug en el body)
+  GoogleCalendarConfig.js           → panel para que cada clínica conecte su Google Calendar
+  AgendaLista.js / AgendaSemana.js / AgendaCrearTurnoModal.js → vistas de la agenda
+  api/agenda/rango/route.js         → turnos de un rango de fechas (para la vista semanal)
+  api/config/google-calendar/route.js → conectar/desconectar el Google Calendar de la empresa
 lib/
   empresas.js                      → resuelve una empresa por su slug
   horarios.js                      → resuelve el horario de un profesional para una fecha (con excepciones)
   auth.js                          → requireEmpresaSession (usuarios de clínica) y requireAdminPlataforma (Xenom)
+  agendaEstados.js                 → los 6 estados de turno (Reservado/Esperando/En consulta/Atendido/Cancelado/Ausente)
+  googleCalendar.js                → integración con Google Calendar vía Service Account
 ```
 
 ## Qué falta para venderlo como producto (honesto, no está armado todavía)

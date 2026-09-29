@@ -14,6 +14,7 @@ import SecretariaView from './SecretariaView';
 import CajaComisionesSection from './CajaComisionesSection';
 import ProfesionalesAdmin from './ProfesionalesAdmin';
 import AgendaBuilder from './AgendaBuilder';
+import GoogleCalendarConfig from './GoogleCalendarConfig';
 import XenomAdmin from './XenomAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
@@ -280,6 +281,7 @@ function Dashboard({
         {SECTIONS.map(s => <a key={s.id} href={'#' + s.id}>{s.label}</a>)}
         <a href="#caja">Caja y comisiones</a>
         <a href="#profesionales-admin">Profesionales (horarios)</a>
+        <a href="#google-calendar">Google Calendar</a>
       </nav>
 
       <div className="wrap">
@@ -338,6 +340,8 @@ function Dashboard({
         <section id="caja"><div className="card"><CajaComisionesSection /></div></section>
 
         <section id="profesionales-admin"><div className="card"><ProfesionalesAdmin /></div></section>
+
+        <section id="google-calendar"><div className="card"><GoogleCalendarConfig /></div></section>
 
         <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
       </div>

@@ -281,6 +281,7 @@ export default function AgendaBuilder({ empresaSlug }) {
       <AgendaCrearTurnoModal
         open={modalOpen} onClose={() => setModalOpen(false)}
         profesionales={profesionales} initial={modalInitial} onCreated={onTurnoCreado}
+        empresaSlug={empresaSlug}
       />
     </>
   );

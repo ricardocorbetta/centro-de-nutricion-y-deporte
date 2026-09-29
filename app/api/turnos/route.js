@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../lib/auth';
 import { overlapsAny } from '../../../lib/scheduling';
+import { crearEventoCalendario } from '../../../lib/googleCalendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,18 @@ export async function POST(request) {
     }).select().single();
 
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
+
+    // Mejor esfuerzo: si la empresa tiene Google Calendar conectado, crea el evento ahí.
+    // Nunca bloquea la respuesta ni hace fallar la creación del turno.
+    const { data: empresa } = await sb.from('empresas').select('nombre, google_calendar_id').eq('id', empresaId).single();
+    if (empresa?.google_calendar_id) {
+      const eventId = await crearEventoCalendario({ calendarId: empresa.google_calendar_id, turno: data, empresaNombre: empresa.nombre });
+      if (eventId) {
+        await sb.from('turnos_propios').update({ google_event_id: eventId }).eq('id', data.id);
+        data.google_event_id = eventId;
+      }
+    }
+
     return NextResponse.json({ ok: true, turno: data });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
