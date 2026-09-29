@@ -27,6 +27,7 @@ export async function GET(request) {
       id: t.id,
       day: t.day, time: t.time, resource: t.resource, service: t.service, duration: t.duration,
       status: t.status, financier: t.financier, origen: t.origen || 'reserva_publica',
+      modalidad: t.modalidad || 'presencial',
       paciente_nombre: t.paciente_nombre, paciente_telefono: t.paciente_telefono
     }));
     const turnos = [...importados, ...propiosMapeados].sort((a, b) => (a.time || '').localeCompare(b.time || ''));

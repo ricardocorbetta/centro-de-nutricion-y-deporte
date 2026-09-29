@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../lib/auth';
+import { ESTADOS_VALIDOS } from '../../../../lib/agendaEstados';
 
 export const dynamic = 'force-dynamic';
-
-const ESTADOS_VALIDOS = ['booked', 'cancelled', 'cumplido', 'noshow'];
 
 // PATCH: cambia el estado de un turno cargado desde este sistema (no aplica a los importados de drManager,
 // que no tienen id acá). Body: { status }

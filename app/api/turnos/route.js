@@ -6,13 +6,13 @@ import { overlapsAny } from '../../../lib/scheduling';
 export const dynamic = 'force-dynamic';
 
 // POST: crea un turno "a mano" (lo carga la secretaria o la directora desde la agenda interna).
-// Body: { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador }
+// Body: { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador, modalidad }
 export async function POST(request) {
   const { session, error } = requireEmpresaSession(request);
   if (error) return error;
   try {
     const body = await request.json();
-    const { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador } = body;
+    const { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador, modalidad } = body;
     if (!fecha || !hora || !profesional || !servicio || !duracion) {
       return NextResponse.json({ error: 'Faltan datos para crear el turno.' }, { status: 400 });
     }
@@ -40,6 +40,7 @@ export async function POST(request) {
       day: fecha, time: hora, resource: profesional, service: servicio, duration: duracion,
       status: 'booked', financier: financiador || 'Particular',
       paciente_nombre: pacienteNombre || null, paciente_telefono: pacienteTelefono || null,
+      modalidad: modalidad === 'videollamada' ? 'videollamada' : 'presencial',
       origen: 'staff', creado_por: session.username
     }).select().single();
 
