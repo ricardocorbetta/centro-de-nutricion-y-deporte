@@ -75,6 +75,18 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
     return () => clearTimeout(t);
   }, [query]);
 
+  // La ficha del paciente ahora reemplaza el listado en el mismo lugar de la pantalla (con un
+  // botón "Volver") en vez de abrirse como un modal flotante encima de todo.
+  if (seleccionado) {
+    return (
+      <FichaPaciente
+        id={seleccionado} empresaSlug={empresaSlug}
+        onBack={() => setSeleccionado(null)}
+        onUpdated={() => cargar(query)}
+      />
+    );
+  }
+
   return (
     <>
       <div className="section-head"><span className="dot" /><h2>Pacientes</h2>
@@ -164,10 +176,6 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
           onSaved={(p) => { setCreando(false); cargar(query); setSeleccionado(p.id); }}
         />
       )}
-
-      {seleccionado && (
-        <FichaPacienteModal id={seleccionado} empresaSlug={empresaSlug} onClose={() => setSeleccionado(null)} onUpdated={() => cargar(query)} />
-      )}
     </>
   );
 }
@@ -225,7 +233,9 @@ function PacienteFormModal({ onClose, onSaved, inicial }) {
   );
 }
 
-function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
+// Ficha de un paciente — reemplaza el listado en el mismo lugar de la pantalla (ver arriba),
+// con un botón "Volver" en vez de ser un modal flotante.
+function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -250,20 +260,23 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
-      <div className="card" style={{ width: 560, maxWidth: '92vw', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        {loading ? (
-          <>
-            <div className="skeleton skeleton-line" style={{ width: '40%', height: 20 }} />
-            <div className="skeleton skeleton-block" style={{ marginBottom: 14 }} />
-            <div className="skeleton skeleton-block" />
-          </>
-        ) : errorMsg ? <p style={{ color: 'var(--rust)' }}>{errorMsg}</p> : data && (
-          <>
-            <div className="section-head">
-              <span className="dot" /><h2>{data.paciente.nombre}</h2>
-              <button className="icon-btn" style={{ marginLeft: 'auto', fontSize: 11.5, padding: '4px 10px' }} onClick={() => setEditando(true)}>Editar</button>
-            </div>
+    <>
+      <div style={{ marginBottom: 14 }}>
+        <button className="icon-btn" onClick={onBack}>← Volver al listado</button>
+      </div>
+
+      {loading ? (
+        <>
+          <div className="skeleton skeleton-line" style={{ width: '40%', height: 20 }} />
+          <div className="skeleton skeleton-block" style={{ marginBottom: 14 }} />
+          <div className="skeleton skeleton-block" />
+        </>
+      ) : errorMsg ? <p style={{ color: 'var(--rust)' }}>{errorMsg}</p> : data && (
+        <>
+          <div className="section-head">
+            <span className="dot" /><h2>{data.paciente.nombre}</h2>
+            <button className="icon-btn" style={{ marginLeft: 'auto', fontSize: 11.5, padding: '4px 10px' }} onClick={() => setEditando(true)}>Editar</button>
+          </div>
 
             <table className="plain" style={{ marginBottom: 18 }}>
               <tbody>
@@ -340,13 +353,12 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
             <ArchivosPaciente pacienteId={id} />
 
             <div style={{ marginTop: 16 }}>
-              <button className="icon-btn" onClick={onClose}>Cerrar</button>
+              <button className="icon-btn" onClick={onBack}>← Volver al listado</button>
             </div>
 
             <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={cargar} />
           </>
         )}
-      </div>
 
       {editando && data && (
         <PacienteFormModal
@@ -355,7 +367,7 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
           onSaved={() => { setEditando(false); cargar(); onUpdated?.(); }}
         />
       )}
-    </div>
+    </>
   );
 }
 
