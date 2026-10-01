@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LOGO_DATA_URI } from '../lib/logo';
 import {
   DOW_ES, DOW_ORDER, HOURS,
-  fmtMoney, fmtHoras, isPriceConfirmed,
+  fmtMoney, fmtMoneyShort, fmtHoras, isPriceConfirmed,
   computeStats, computeStatsManual, topBottom,
   simulateScenario, goalProgress,
   eventsFromCSV, consumersFromCSV, monthKeyFromEvents
@@ -366,7 +366,7 @@ function Dashboard({
               )}
 
               {activeSection === 'oportunidad' && stats && !stats.isManual && (
-                <section><div className="card"><RecoSection stats={stats} /></div></section>
+                <section><div className="card"><RecoSection stats={stats} trendStats={trendStats} periods={periods} /></div></section>
               )}
               {activeSection === 'oportunidad' && stats?.isManual && (
                 <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no hay datos suficientes para recomendaciones.</p>
@@ -743,17 +743,23 @@ function SimulatorSection({ stats: s, config, currentMonth, onSaveGoal }) {
 function TrendSection({ periods, trendStats }) {
   const keys = periods.map(p => p.month_key).slice().sort();
   const max = Math.max(1, ...keys.map(k => trendStats[k]?.revenue || 0));
+  const ultimo = trendStats[keys[keys.length - 1]];
+  const anterior = trendStats[keys[keys.length - 2]];
+  const delta = ultimo && anterior && anterior.revenue ? ((ultimo.revenue - anterior.revenue) / anterior.revenue) * 100 : null;
   return (
     <>
-      <div className="section-head"><span className="dot" /><h2>Evolución mes a mes</h2><span className="note">arena = carga manual</span></div>
+      <div className="section-head"><span className="dot" /><h2>Evolución mes a mes</h2>
+        <span className="note">
+          {delta != null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(0)}% vs. mes anterior · ` : ''}color sólido = carga manual
+        </span></div>
       <div className="trend-row">
         {keys.map(k => {
           const t = trendStats[k];
           return (
-            <div className="trend-col" key={k}>
-              <div className="amt">{t ? fmtMoney(t.revenue) : '…'}</div>
+            <div className="trend-col" key={k} title={t ? fmtMoney(t.revenue) : 'sin datos'}>
+              <div className="amt">{t ? fmtMoneyShort(t.revenue) : '…'}</div>
               <div className={'bar' + (t?.isManual ? ' manual' : '')} style={{ height: ((t?.revenue || 0) / max * 110) + 6 }} />
-              <div className="lbl">{k}</div>
+              <div className="lbl">{k.slice(2)}</div>
             </div>
           );
         })}
@@ -762,39 +768,110 @@ function TrendSection({ periods, trendStats }) {
   );
 }
 
-function RecoSection({ stats: s }) {
+// Cada tarjeta se calcula a partir de los datos reales del período — si un dato no da para
+// una conclusión (ej. un solo profesional, un solo financiador cargado) esa tarjeta directamente
+// no se muestra, en vez de rellenar con una idea genérica que no sale de los números.
+function RecoSection({ stats: s, trendStats, periods }) {
   const tb = topBottom(s);
   const horasLibres = Math.max(0, s.capacidadTotalHoras - s.horasOcupadas);
   const particularShare = s.booked ? ((s.porFinanciador['Particular'] || 0) / s.booked * 100) : 0;
   const financiadorEntries = Object.entries(s.porFinanciador);
 
-  const cards = [
-    { h: 'Llenar la agenda antes que buscar pacientes nuevos',
-      p: `Hoy se usa ${s.ocupacionPct.toFixed(0)}% de la capacidad. Cerrar esa brecha (${horasLibres.toFixed(0)}h libres) vale ${fmtMoney(horasLibres * s.revenuePorHora)} adicionales con la base que ya tienen.` },
-    { h: `${DOW_ES[tb.bottom.d]} está subutilizado`,
-      p: `Frente a ${DOW_ES[tb.top.d]} (el día más ocupado), ${DOW_ES[tb.bottom.d]} es candidato para promociones puntuales o actividades grupales.` },
-    { h: `Franja de ${tb.idleHour.h}:00 con menos demanda`,
-      p: `Puede reservarse para seguimientos cortos por videollamada, nutrición infantil, o cerrarse si no compensa.` },
-    { h: 'Auditar financiadores / convenios',
-      p: `${particularShare.toFixed(0)}% de los turnos identificados figuran "Particular"${financiadorEntries.length <= 1 ? ' (el resto sin cargar)' : ''}. Vale revisar convenios con obras sociales o prepagas.` },
-    { h: 'Nuevas unidades: deporte + nutrición',
-      p: `Convenios con clubes locales, planes corporativos de bienestar y talleres grupales — facturables en las franjas hoy más vacías.` },
-    { h: 'Bioimpedancia y antropometría como upsell',
-      p: `Servicios cortos (20–30 min), hoy con precio sin confirmar. Como complemento pago del control, suman sin ocupar franjas completas.` },
-  ];
+  const cards = [];
+
+  if (horasLibres > 1) {
+    cards.push({ h: 'Llenar la agenda antes que buscar pacientes nuevos',
+      p: `Hoy se usa ${s.ocupacionPct.toFixed(0)}% de la capacidad. Cerrar esa brecha (${horasLibres.toFixed(0)}h libres) vale ${fmtMoney(horasLibres * s.revenuePorHora)} adicionales con la base que ya tienen.` });
+  }
+
+  if (tb.bottom && tb.top && tb.bottom.d !== tb.top.d && s.porDia) {
+    const turnosTop = s.porDia[tb.top.d]?.count || 0;
+    const turnosBottom = s.porDia[tb.bottom.d]?.count || 0;
+    cards.push({ h: `${DOW_ES[tb.bottom.d]} está subutilizado`,
+      p: `Frente a ${DOW_ES[tb.top.d]} (el día más ocupado, ${turnosTop} turnos), ${DOW_ES[tb.bottom.d]} tiene solo ${turnosBottom} — candidato para promociones puntuales o actividades grupales.` });
+  }
+
+  if (tb.idleHour) {
+    cards.push({ h: `Franja de ${tb.idleHour.h}:00 con menos demanda`,
+      p: `Es la hora con menos turnos reservados en la semana. Puede reservarse para seguimientos cortos por videollamada, o liberarse si no compensa tenerla abierta.` });
+  }
+
+  if (financiadorEntries.length > 1) {
+    cards.push({ h: 'Auditar financiadores / convenios',
+      p: `${particularShare.toFixed(0)}% de los turnos identificados figuran "Particular". El resto se reparte en ${financiadorEntries.length - 1} financiador${financiadorEntries.length - 1 === 1 ? '' : 'es'} más — vale revisar si esos convenios están rindiendo lo esperado.` });
+  }
+
+  // Ausentismo: cuánto cuesta en pesos, no solo en porcentaje
+  if (s.noshow > 0 && s.booked > 0) {
+    const ticketProm = s.revenue / s.booked;
+    const costoAusentismo = s.noshow * ticketProm;
+    const tasaAusentismo = (s.noshow / (s.booked + s.noshow)) * 100;
+    cards.push({ h: `Ausentismo: ${tasaAusentismo.toFixed(0)}% de los turnos`,
+      p: `${s.noshow} turno${s.noshow === 1 ? '' : 's'} ausente${s.noshow === 1 ? '' : 's'} este período, unos ${fmtMoney(costoAusentismo)} en horas que quedaron vacías. Un recordatorio por WhatsApp 24h antes (ya disponible en la agenda) o una seña al reservar suelen bajar esto bastante.` });
+  }
+
+  // Cancelaciones altas
+  if (s.cancelled > 0 && s.booked > 0) {
+    const tasaCancelacion = (s.cancelled / (s.booked + s.cancelled)) * 100;
+    if (tasaCancelacion >= 10) {
+      cards.push({ h: `Cancelaciones: ${tasaCancelacion.toFixed(0)}% de los turnos`,
+        p: `${s.cancelled} turnos cancelados este período. Si se concentran en algún profesional o franja puntual, vale mirar si hay un problema de horario o de recordatorio previo.` });
+    }
+  }
+
+  // Precios sin confirmar: cuánto de lo ya facturado está sobre una tarifa provisoria
+  if (s.revenuePlaceholder > 0) {
+    cards.push({ h: 'Hay tarifas sin confirmar',
+      p: `${fmtMoney(s.revenuePlaceholder)} de la facturación de este período se calculó con un precio todavía "sin confirmar" (⚙ Configurar → Precios). Confirmarlos no cambia la plata ya cobrada, pero sí la precisión de este panel hacia adelante.` });
+  }
+
+  // Profesional con más capacidad ociosa relativa, frente al que más turnos tiene
+  const profEntries = Object.entries(s.porProfesional || {});
+  if (profEntries.length > 1) {
+    const ordenado = [...profEntries].sort((a, b) => b[1].min - a[1].min);
+    const [topNombre, topData] = ordenado[0];
+    const [bottomNombre, bottomData] = ordenado[ordenado.length - 1];
+    if (topData.min > 0 && bottomData.min / topData.min < 0.6) {
+      cards.push({ h: `${bottomNombre} tiene bastante menos agenda que ${topNombre}`,
+        p: `${bottomNombre}: ${fmtHoras(bottomData.min)} reservadas (${bottomData.count} turnos) vs. ${topNombre}: ${fmtHoras(topData.min)} (${topData.count} turnos). Si ${bottomNombre} tiene lugar, vale derivarle pacientes nuevos o promocionar su agenda puntualmente.` });
+    }
+  }
+
+  // Tendencia vs. el mes anterior (si hay al menos 2 períodos cargados)
+  if (periods && periods.length >= 2 && trendStats) {
+    const keys = periods.map(p => p.month_key).sort();
+    const ultimo = trendStats[keys[keys.length - 1]];
+    const anterior = trendStats[keys[keys.length - 2]];
+    if (ultimo && anterior && anterior.revenue) {
+      const delta = ((ultimo.revenue - anterior.revenue) / anterior.revenue) * 100;
+      if (Math.abs(delta) >= 5) {
+        cards.push({ h: delta >= 0 ? `Facturación en alza: +${delta.toFixed(0)}%` : `Facturación en baja: ${delta.toFixed(0)}%`,
+          p: `${fmtMoney(ultimo.revenue)} este período vs. ${fmtMoney(anterior.revenue)} el anterior. ${delta >= 0 ? 'Vale identificar qué cambió para sostenerlo.' : 'Vale revisar si bajó la ocupación, el ausentismo subió, o fue un mes atípico (vacaciones, feriados).'}` });
+      }
+    }
+  }
 
   return (
     <>
-      <div className="section-head"><span className="dot" /><h2>Dónde está la oportunidad</h2></div>
-      <div className="reco-grid">
-        {cards.map((c, i) => (
-          <div className="reco" key={i}>
-            <div className="idx">{String(i + 1).padStart(2, '0')}</div>
-            <h3>{c.h}</h3>
-            <p>{c.p}</p>
-          </div>
-        ))}
-      </div>
+      <div className="section-head"><span className="dot" /><h2>Dónde está la oportunidad</h2>
+        <span className="note">calculado sobre los datos de este período</span></div>
+      {cards.length === 0 ? (
+        <div className="empty-state">
+          <span className="icon">📊</span>
+          <span className="title">Todavía no hay suficientes datos para generar recomendaciones</span>
+          <span className="hint">Con más turnos cargados en el período, acá van a aparecer oportunidades concretas sacadas de los números reales.</span>
+        </div>
+      ) : (
+        <div className="reco-grid">
+          {cards.map((c, i) => (
+            <div className="reco" key={i}>
+              <div className="idx">{String(i + 1).padStart(2, '0')}</div>
+              <h3>{c.h}</h3>
+              <p>{c.p}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }

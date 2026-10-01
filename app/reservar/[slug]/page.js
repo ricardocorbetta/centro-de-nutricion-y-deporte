@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
+import LoadingSkeleton from '../../LoadingSkeleton';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -107,7 +108,7 @@ export default function ReservarPage({ params }) {
       <div className="card">
         <div className="section-head"><span className="dot" /><h2>Reservar un turno</h2></div>
 
-        {loadingProfs ? <p>Cargando…</p> : (
+        {loadingProfs ? <LoadingSkeleton lines={3} /> : (
           <>
             <div className="manual-grid">
               <div className="field">
@@ -135,8 +136,14 @@ export default function ReservarPage({ params }) {
             {fecha && servicioData && (
               <>
                 <h3 style={{ fontSize: 13, fontWeight: 700, marginTop: 18, marginBottom: 10 }}>Horarios disponibles</h3>
-                {loadingHorarios ? <p style={{ color: 'var(--ink-faint)' }}>Buscando horarios…</p> : (
-                  horarios.length === 0 ? <p style={{ color: 'var(--ink-faint)' }}>No hay horarios libres ese día. Probá otra fecha.</p> : (
+                {loadingHorarios ? <LoadingSkeleton lines={1} widths={['100%']} /> : (
+                  horarios.length === 0 ? (
+                    <div className="empty-state" style={{ padding: '20px 10px' }}>
+                      <span className="icon">🗓️</span>
+                      <span className="title">No hay horarios libres ese día</span>
+                      <span className="hint">Probá con otra fecha.</span>
+                    </div>
+                  ) : (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
                       {horarios.map(h => (
                         <button key={h} type="button"
