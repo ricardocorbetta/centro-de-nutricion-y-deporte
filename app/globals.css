@@ -353,9 +353,9 @@ footer{text-align:center; font-family:var(--mono); font-size:11px; color:var(--i
 /* ---------- App shell: sidebar (desktop) + tab strip (mobile) ---------- */
 .app-shell{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto;}
 .sidebar{
-  width:208px; flex-shrink:0; position:sticky; top:66px;
+  width:228px; flex-shrink:0; position:sticky; top:66px;
   padding:20px 10px; display:flex; flex-direction:column;
-  max-height:calc(100vh - 66px); overflow-y:auto;
+  max-height:calc(100vh - 66px); overflow-y:auto; overflow-x:hidden;
 }
 .sidebar-group{display:flex; flex-direction:column; gap:2px; margin-bottom:16px;}
 .sidebar-group:last-child{margin-bottom:0;}
@@ -364,16 +364,18 @@ footer{text-align:center; font-family:var(--mono); font-size:11px; color:var(--i
   color:var(--ink-faint); padding:4px 14px 6px;
 }
 .sidebar-link{
-  display:block; width:100%; text-align:left;
+  display:flex; align-items:center; width:100%; text-align:left;
   font-family:var(--sans); font-size:13.5px; font-weight:600; color:var(--ink-soft);
   background:transparent; border:none; border-left:2px solid transparent;
   border-radius:0 10px 10px 0; padding:10px 14px; min-height:40px; cursor:pointer;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   transition:background-color .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
 }
 .sidebar-link:hover{background:var(--surface-alt); color:var(--ink);}
 .sidebar-link.active{background:var(--primary-soft); color:var(--primary-dark); border-left-color:var(--primary); font-weight:700;}
-.sidebar-link-icon{display:inline-block; width:18px; text-align:center; margin-right:4px; filter:grayscale(1); opacity:.85;}
+.sidebar-link-icon{display:inline-block; width:18px; flex-shrink:0; text-align:center; margin-right:4px; filter:grayscale(1); opacity:.85;}
 .sidebar-link.active .sidebar-link-icon{filter:none; opacity:1;}
+.sidebar-link-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
 
 .mobile-tabs{display:none;}
 

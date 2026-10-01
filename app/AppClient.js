@@ -263,12 +263,12 @@ function Dashboard({
       { id: 'agenda-director', label: 'Agenda', icon: '📅' },
       { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
       { id: 'biblioteca', label: 'Biblioteca', icon: '📚' },
-      { id: 'cartelera', label: 'Cartelera pública', icon: '📣' },
-      { id: 'caja', label: 'Caja y comisiones', icon: '💵' },
+      { id: 'cartelera', label: 'Cartelera', icon: '📣' },
+      { id: 'caja', label: 'Caja', icon: '💵' },
     ]},
     { label: 'Reportes', items: [
       { id: 'resumen', label: 'Resumen', icon: '📊' },
-      { id: 'equipo', label: 'Equipo y horarios', icon: '👥' },
+      { id: 'equipo', label: 'Equipo', icon: '👥' },
       ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia', icon: '📈' }] : []),
       { id: 'oportunidad', label: 'Oportunidad', icon: '🎯' },
       { id: 'simulador', label: 'Simulador', icon: '🧮' },
@@ -319,8 +319,9 @@ function Dashboard({
             <div key={g.label} className="sidebar-group">
               <div className="sidebar-group-label">{g.label}</div>
               {g.items.map(n => (
-                <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)}>
-                  <span className="sidebar-link-icon" aria-hidden="true">{n.icon}</span> {n.label}
+                <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)} title={n.label}>
+                  <span className="sidebar-link-icon" aria-hidden="true">{n.icon}</span>
+                  <span className="sidebar-link-label">{n.label}</span>
                 </button>
               ))}
             </div>
