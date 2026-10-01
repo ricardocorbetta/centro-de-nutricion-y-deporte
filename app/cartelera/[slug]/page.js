@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
 import LoadingSkeleton from '../../LoadingSkeleton';
+import PlataformaFooter from '../../PlataformaFooter';
 
 const TIPO_LABEL = { taller: 'Taller', efemeride: 'Fecha especial', receta: 'Receta', flyer: 'Novedad', comunidad: 'Comunidad', otro: 'Novedad' };
 
@@ -83,6 +84,8 @@ export default function CarteleraPage({ params }) {
             )}
           </div>
         )}
+
+        <PlataformaFooter />
       </div>
     </div>
   );

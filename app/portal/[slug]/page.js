@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
 import LoadingSkeleton from '../../LoadingSkeleton';
+import PlataformaFooter from '../../PlataformaFooter';
 
 const TIPO_LABEL = { plan: 'Plan alimentario', bioimpedancia: 'Bioimpedancia', antropometria: 'Antropometría' };
 
@@ -21,6 +22,14 @@ export default function PortalPage({ params }) {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [entrando, setEntrando] = useState(false);
+  const [marca, setMarca] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/public/empresa?empresa=' + encodeURIComponent(slug))
+      .then(r => r.json())
+      .then(d => { if (!d.error) setMarca(d.empresa); })
+      .catch(() => {});
+  }, [slug]);
 
   async function cargarMe() {
     try {
@@ -69,8 +78,11 @@ export default function PortalPage({ params }) {
     <div style={{ minHeight: '100vh', background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 18px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-          <img src={LOGO_DATA_URI} alt="" style={{ height: 34 }} />
-          <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Portal de pacientes</div>
+          <img src={marca?.logoUrl || LOGO_DATA_URI} alt="" style={{ height: 34 }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{marca?.nombreCorto || marca?.nombre || ''}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>Portal de pacientes</div>
+          </div>
         </div>
 
         {checking ? (
@@ -93,6 +105,8 @@ export default function PortalPage({ params }) {
         ) : (
           <PortalApp me={me} onLogout={salir} colorPrimario={colorPrimario} />
         )}
+
+        <PlataformaFooter />
       </div>
     </div>
   );
@@ -126,9 +140,12 @@ function PortalApp({ me, onLogout, colorPrimario }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>Hola, {me.paciente.nombre.split(' ')[0]}</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{me.empresa.nombreCorto || me.empresa.nombre}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src={me.empresa.logoUrl || LOGO_DATA_URI} alt="" style={{ height: 30 }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>Hola, {me.paciente.nombre.split(' ')[0]}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{me.empresa.nombreCorto || me.empresa.nombre}</div>
+          </div>
         </div>
         <button className="icon-btn" onClick={onLogout}>Salir</button>
       </div>

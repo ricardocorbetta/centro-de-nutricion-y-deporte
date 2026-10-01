@@ -260,23 +260,23 @@ function Dashboard({
   // medio, y lo que se toca una vez y no se vuelve a tocar (configuración) al final.
   const NAV_GROUPS = [
     { label: 'Operación diaria', items: [
-      { id: 'agenda-director', label: 'Agenda' },
-      { id: 'pacientes', label: 'Pacientes' },
-      { id: 'biblioteca', label: 'Biblioteca' },
-      { id: 'cartelera', label: 'Cartelera pública' },
-      { id: 'caja', label: 'Caja y comisiones' },
+      { id: 'agenda-director', label: 'Agenda', icon: '📅' },
+      { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
+      { id: 'biblioteca', label: 'Biblioteca', icon: '📚' },
+      { id: 'cartelera', label: 'Cartelera pública', icon: '📣' },
+      { id: 'caja', label: 'Caja y comisiones', icon: '💵' },
     ]},
     { label: 'Reportes', items: [
-      { id: 'resumen', label: 'Resumen' },
-      { id: 'equipo', label: 'Equipo y horarios' },
-      ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia' }] : []),
-      { id: 'oportunidad', label: 'Oportunidad' },
-      { id: 'simulador', label: 'Simulador' },
+      { id: 'resumen', label: 'Resumen', icon: '📊' },
+      { id: 'equipo', label: 'Equipo y horarios', icon: '👥' },
+      ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia', icon: '📈' }] : []),
+      { id: 'oportunidad', label: 'Oportunidad', icon: '🎯' },
+      { id: 'simulador', label: 'Simulador', icon: '🧮' },
     ]},
     { label: 'Configuración', items: [
-      { id: 'profesionales-admin', label: 'Profesionales' },
-      { id: 'google-calendar', label: 'Google Calendar' },
-      { id: 'mercadopago', label: 'Mercado Pago' },
+      { id: 'profesionales-admin', label: 'Profesionales', icon: '🩺' },
+      { id: 'google-calendar', label: 'Google Calendar', icon: '🗓️' },
+      { id: 'mercadopago', label: 'Mercado Pago', icon: '💳' },
     ]},
   ];
   const NAV = NAV_GROUPS.flatMap(g => g.items);
@@ -290,8 +290,8 @@ function Dashboard({
           <div className="topbar-brand">
             <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
             <div className="topbar-title">
-              <span className="app-name">Panel de Ocupación &amp; Facturación</span>
-              <span className="app-sub">{empresa?.nombre || ''}</span>
+              <span className="app-name">NUTRIO</span>
+              <span className="app-sub">{empresa?.nombre || 'Panel de gestión'}</span>
             </div>
           </div>
           <div className="topbar-spacer" />
@@ -307,7 +307,9 @@ function Dashboard({
 
       <div className="mobile-tabs">
         {NAV.map(n => (
-          <button key={n.id} className={activeSection === n.id ? 'active' : ''} onClick={() => setActiveSection(n.id)}>{n.label}</button>
+          <button key={n.id} className={activeSection === n.id ? 'active' : ''} onClick={() => setActiveSection(n.id)}>
+            <span aria-hidden="true">{n.icon}</span> {n.label}
+          </button>
         ))}
       </div>
 
@@ -318,7 +320,7 @@ function Dashboard({
               <div className="sidebar-group-label">{g.label}</div>
               {g.items.map(n => (
                 <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)}>
-                  {n.label}
+                  <span className="sidebar-link-icon" aria-hidden="true">{n.icon}</span> {n.label}
                 </button>
               ))}
             </div>

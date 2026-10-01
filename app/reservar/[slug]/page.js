@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
 import { fmtMoney } from '../../../lib/stats';
 import LoadingSkeleton from '../../LoadingSkeleton';
+import PlataformaFooter from '../../PlataformaFooter';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -216,7 +217,10 @@ function Shell({ empresa, children }) {
           </div>
         </div>
       </div>
-      <div className="wrap" style={{ maxWidth: 520 }}>{children}</div>
+      <div className="wrap" style={{ maxWidth: 520 }}>
+        {children}
+        <PlataformaFooter />
+      </div>
     </div>
   );
 }
