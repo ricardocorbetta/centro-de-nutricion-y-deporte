@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Xenom — Plataforma de gestión para centros de nutrición y deporte',
+  title: 'NUTRIO — Plataforma de gestión para centros de nutrición y deporte',
   description: 'Agenda, caja, comisiones y facturación en un solo panel.'
 };
 

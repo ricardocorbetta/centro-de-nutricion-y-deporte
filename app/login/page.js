@@ -38,7 +38,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="card" style={{
         padding: '36px 32px', width: 340, boxShadow: 'var(--shadow)'
       }}>
-        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)', marginBottom: 4 }}>Xenom</div>
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)', marginBottom: 4 }}>NUTRIO</div>
         <h1 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 4px', color: 'var(--ink)' }}>Panel de gestión</h1>
         <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 22px' }}>Plataforma para centros de nutrición y deporte</p>
 

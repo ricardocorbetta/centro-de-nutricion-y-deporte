@@ -354,8 +354,14 @@ footer{text-align:center; font-family:var(--mono); font-size:11px; color:var(--i
 .app-shell{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto;}
 .sidebar{
   width:208px; flex-shrink:0; position:sticky; top:66px;
-  padding:20px 10px; display:flex; flex-direction:column; gap:2px;
+  padding:20px 10px; display:flex; flex-direction:column;
   max-height:calc(100vh - 66px); overflow-y:auto;
+}
+.sidebar-group{display:flex; flex-direction:column; gap:2px; margin-bottom:16px;}
+.sidebar-group:last-child{margin-bottom:0;}
+.sidebar-group-label{
+  font-family:var(--sans); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--ink-faint); padding:4px 14px 6px;
 }
 .sidebar-link{
   display:block; width:100%; text-align:left;

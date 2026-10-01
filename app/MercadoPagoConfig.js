@@ -73,7 +73,7 @@ export default function MercadoPagoConfig() {
         <span className="note">{conectado ? 'conectado' : 'no conectado'}</span></div>
 
       <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: -6 }}>
-        Conectá la cuenta de Mercado Pago <b>de la clínica</b> (la plata entra directo ahí, nunca pasa por Xenom).
+        Conectá la cuenta de Mercado Pago <b>de la clínica</b> (la plata entra directo ahí, nunca pasa por NUTRIO).
         Con esto activo podés: pedir una seña para confirmar reservas online, y generar un link/QR de cobro para
         cualquier turno desde la agenda — ambos casos cargan el cobro solo en la caja del día cuando el paciente paga.
       </p>

@@ -23,7 +23,7 @@ export async function POST(request) {
       const { data: empresaRow } = await sb.from('empresas').select('id, slug, nombre, nombre_corto, ciudad, logo_url, color_primario, color_acento, activo')
         .eq('id', user.empresa_id).single();
       if (empresaRow && !empresaRow.activo) {
-        return NextResponse.json({ error: 'Esta cuenta está suspendida. Contactá a Xenom.' }, { status: 403 });
+        return NextResponse.json({ error: 'Esta cuenta está suspendida. Contactá a NUTRIO.' }, { status: 403 });
       }
       empresa = empresaRow;
     }

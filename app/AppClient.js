@@ -253,19 +253,29 @@ function Dashboard({
 }) {
   const [activeSection, setActiveSection] = useState('agenda-director');
 
-  const NAV = [
-    { id: 'agenda-director', label: 'Agenda' },
-    { id: 'resumen', label: 'Resumen' },
-    { id: 'equipo', label: 'Equipo y horarios' },
-    { id: 'pacientes', label: 'Pacientes' },
-    { id: 'simulador', label: 'Simulador' },
-    ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia' }] : []),
-    { id: 'oportunidad', label: 'Oportunidad' },
-    { id: 'caja', label: 'Caja y comisiones' },
-    { id: 'profesionales-admin', label: 'Profesionales' },
-    { id: 'google-calendar', label: 'Google Calendar' },
-    { id: 'mercadopago', label: 'Mercado Pago' },
+  // Agrupado por frecuencia de uso real, no por orden de cuándo se construyó cada pantalla:
+  // lo que se usa todos los días arriba, los reportes que se consultan de tanto en tanto en el
+  // medio, y lo que se toca una vez y no se vuelve a tocar (configuración) al final.
+  const NAV_GROUPS = [
+    { label: 'Operación diaria', items: [
+      { id: 'agenda-director', label: 'Agenda' },
+      { id: 'pacientes', label: 'Pacientes' },
+      { id: 'caja', label: 'Caja y comisiones' },
+    ]},
+    { label: 'Reportes', items: [
+      { id: 'resumen', label: 'Resumen' },
+      { id: 'equipo', label: 'Equipo y horarios' },
+      ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia' }] : []),
+      { id: 'oportunidad', label: 'Oportunidad' },
+      { id: 'simulador', label: 'Simulador' },
+    ]},
+    { label: 'Configuración', items: [
+      { id: 'profesionales-admin', label: 'Profesionales' },
+      { id: 'google-calendar', label: 'Google Calendar' },
+      { id: 'mercadopago', label: 'Mercado Pago' },
+    ]},
   ];
+  const NAV = NAV_GROUPS.flatMap(g => g.items);
 
   const necesitaStats = ['resumen', 'equipo', 'simulador', 'oportunidad'].includes(activeSection);
 
@@ -299,10 +309,15 @@ function Dashboard({
 
       <div className="app-shell">
         <aside className="sidebar">
-          {NAV.map(n => (
-            <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)}>
-              {n.label}
-            </button>
+          {NAV_GROUPS.map(g => (
+            <div key={g.label} className="sidebar-group">
+              <div className="sidebar-group-label">{g.label}</div>
+              {g.items.map(n => (
+                <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)}>
+                  {n.label}
+                </button>
+              ))}
+            </div>
           ))}
         </aside>
 
@@ -396,7 +411,7 @@ function Dashboard({
             <section><div className="card"><MercadoPagoConfig /></div></section>
           )}
 
-          <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
+          <footer>NUTRIO — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
         </main>
       </div>
     </>

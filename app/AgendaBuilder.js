@@ -134,14 +134,6 @@ export default function AgendaBuilder({ empresaSlug }) {
 
   function nuevoTurnoRapido() { abrirModal({ fecha, modalidad: 'presencial' }); }
   function nuevaVideoconsultaRapida() { abrirModal({ fecha, modalidad: 'videollamada' }); }
-  function nuevoPacienteRapido() {
-    setQuickMenuOpen(false);
-    const seguir = window.confirm(
-      'Todavía no hay una ficha de pacientes separada: los datos del paciente se guardan junto con el turno. ' +
-      '¿Querés cargar un turno nuevo para este paciente ahora?'
-    );
-    if (seguir) abrirModal({ fecha, modalidad: 'presencial' });
-  }
 
   function onTurnoCreado() {
     cargarTurnos(fecha);
@@ -227,8 +219,7 @@ export default function AgendaBuilder({ empresaSlug }) {
               }}>
                 {[
                   ['Nuevo turno', nuevoTurnoRapido],
-                  ['Nueva videoconsulta', nuevaVideoconsultaRapida],
-                  ['Nuevo paciente', nuevoPacienteRapido]
+                  ['Nueva videoconsulta', nuevaVideoconsultaRapida]
                 ].map(([label, fn]) => (
                   <button key={label} onClick={fn} style={{
                     display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px',

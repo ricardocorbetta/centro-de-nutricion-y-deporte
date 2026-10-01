@@ -57,7 +57,7 @@ export default function GoogleCalendarConfig() {
         <div className="section-head"><span className="dot" /><h2>Google Calendar</h2></div>
         <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
           Esta funcionalidad todavía no está habilitada en la plataforma (falta configurar el Service Account de
-          Google del lado del servidor). Avisale a Xenom para activarla.
+          Google del lado del servidor). Avisale a NUTRIO para activarla.
         </p>
       </>
     );

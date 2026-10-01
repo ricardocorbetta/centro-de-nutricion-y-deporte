@@ -198,7 +198,7 @@ export default function SecretariaView({ name, username, empresa }) {
           </>
         )}
 
-        <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
+        <footer>NUTRIO — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
       </div>
     </>
   );
