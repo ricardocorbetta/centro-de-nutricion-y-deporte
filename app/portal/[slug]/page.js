@@ -98,22 +98,27 @@ export default function PortalPage({ params }) {
   );
 }
 
+const BIBLIOTECA_TIPO_LABEL = { receta: 'Receta', material_educativo: 'Material educativo', pauta_general: 'Pauta general', tip: 'Tip' };
+
 function PortalApp({ me, onLogout, colorPrimario }) {
-  const [tab, setTab] = useState('historial');
+  const [tab, setTab] = useState(me.vigente ? 'historial' : 'biblioteca');
   const [consultas, setConsultas] = useState([]);
   const [archivos, setArchivos] = useState([]);
+  const [biblioteca, setBiblioteca] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    if (!me.vigente) { setLoading(false); return; }
     setLoading(true);
-    Promise.all([
-      fetch('/api/portal/historial').then(r => r.json()),
-      fetch('/api/portal/archivos').then(r => r.json())
-    ]).then(([h, a]) => {
-      setConsultas(h.consultas || []);
-      setArchivos(a.archivos || []);
+    const calls = [fetch('/api/portal/biblioteca').then(r => r.json())];
+    if (me.vigente) {
+      calls.push(fetch('/api/portal/historial').then(r => r.json()));
+      calls.push(fetch('/api/portal/archivos').then(r => r.json()));
+    }
+    Promise.all(calls).then(([b, h, a]) => {
+      setBiblioteca(b.contenido || []);
+      if (h) setConsultas(h.consultas || []);
+      if (a) setArchivos(a.archivos || []);
     }).catch(e => setErrorMsg(e.message))
       .finally(() => setLoading(false));
   }, [me.vigente]);
@@ -128,7 +133,15 @@ function PortalApp({ me, onLogout, colorPrimario }) {
         <button className="icon-btn" onClick={onLogout}>Salir</button>
       </div>
 
-      {!me.vigente ? (
+      <div className="tabbar" style={{ marginBottom: 16 }}>
+        <button className={tab === 'historial' ? 'active' : ''} onClick={() => setTab('historial')}>Historial</button>
+        <button className={tab === 'archivos' ? 'active' : ''} onClick={() => setTab('archivos')}>Mis archivos</button>
+        <button className={tab === 'biblioteca' ? 'active' : ''} onClick={() => setTab('biblioteca')}>Biblioteca</button>
+      </div>
+
+      {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
+
+      {(tab === 'historial' || tab === 'archivos') && !me.vigente ? (
         <div className="card" style={{ padding: 20 }}>
           <div className="empty-state">
             <span className="icon">🔒</span>
@@ -136,56 +149,66 @@ function PortalApp({ me, onLogout, colorPrimario }) {
             <span className="hint">
               Pasaron más de 18 meses desde tu última consulta{me.ultimaConsulta ? ` (${fmtFecha(me.ultimaConsulta)})` : ''}.
               Coordiná una consulta con tu profesional para recuperar el acceso a tus planes y evaluaciones.
+              La Biblioteca sigue disponible mientras tanto.
             </span>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="tabbar" style={{ marginBottom: 16 }}>
-            <button className={tab === 'historial' ? 'active' : ''} onClick={() => setTab('historial')}>Historial</button>
-            <button className={tab === 'archivos' ? 'active' : ''} onClick={() => setTab('archivos')}>Mis archivos</button>
-          </div>
-
-          {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
-
-          {loading ? <LoadingSkeleton lines={4} /> : tab === 'historial' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {consultas.map((c, i) => (
-                <div key={i} className="card" style={{ padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{fmtFecha(c.day)} · {c.time}</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{c.resource}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{(c.service || '').replace('Nutrición / ', '')}</div>
-                </div>
-              ))}
-              {!consultas.length && (
-                <div className="empty-state">
-                  <span className="icon">📅</span>
-                  <span className="title">Todavía no hay consultas registradas</span>
-                </div>
-              )}
+      ) : loading ? <LoadingSkeleton lines={4} /> : tab === 'historial' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {consultas.map((c, i) => (
+            <div key={i} className="card" style={{ padding: '14px 16px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{fmtFecha(c.day)} · {c.time}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{c.resource}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{(c.service || '').replace('Nutrición / ', '')}</div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {archivos.map(a => (
-                <a key={a.id} href={a.url || '#'} target="_blank" rel="noreferrer" className="card"
-                  style={{ padding: '14px 16px', display: 'block', textDecoration: 'none' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
-                    {TIPO_LABEL[a.tipo] || a.tipo}
-                  </div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '2px 0' }}>{a.categoria || a.nombre}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{fmtFecha(a.fecha)} · Descargar ↓</div>
-                </a>
-              ))}
-              {!archivos.length && (
-                <div className="empty-state">
-                  <span className="icon">📄</span>
-                  <span className="title">Todavía no hay archivos cargados</span>
-                  <span className="hint">Tu profesional va a ir subiendo acá tus planes y evaluaciones.</span>
-                </div>
-              )}
+          ))}
+          {!consultas.length && (
+            <div className="empty-state">
+              <span className="icon">📅</span>
+              <span className="title">Todavía no hay consultas registradas</span>
             </div>
           )}
-        </>
+        </div>
+      ) : tab === 'archivos' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {archivos.map(a => (
+            <a key={a.id} href={a.url || '#'} target="_blank" rel="noreferrer" className="card"
+              style={{ padding: '14px 16px', display: 'block', textDecoration: 'none' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
+                {TIPO_LABEL[a.tipo] || a.tipo}
+              </div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '2px 0' }}>{a.categoria || a.nombre}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{fmtFecha(a.fecha)} · Descargar ↓</div>
+            </a>
+          ))}
+          {!archivos.length && (
+            <div className="empty-state">
+              <span className="icon">📄</span>
+              <span className="title">Todavía no hay archivos cargados</span>
+              <span className="hint">Tu profesional va a ir subiendo acá tus planes y evaluaciones.</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {biblioteca.map(b => (
+            <a key={b.id} href={b.url || undefined} target={b.url ? '_blank' : undefined} rel="noreferrer" className="card"
+              style={{ padding: '14px 16px', display: 'block', textDecoration: 'none', cursor: b.url ? 'pointer' : 'default' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
+                {BIBLIOTECA_TIPO_LABEL[b.tipo] || b.tipo}
+              </div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '2px 0' }}>{b.titulo}</div>
+              {b.descripcion && <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 2 }}>{b.descripcion}</div>}
+              <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{b.profesional} · {fmtFecha(b.fecha)}{b.url ? ' · Ver ↓' : ''}</div>
+            </a>
+          ))}
+          {!biblioteca.length && (
+            <div className="empty-state">
+              <span className="icon">📚</span>
+              <span className="title">Todavía no hay contenido publicado</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

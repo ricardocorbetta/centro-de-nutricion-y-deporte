@@ -17,6 +17,7 @@ import AgendaBuilder from './AgendaBuilder';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import MercadoPagoConfig from './MercadoPagoConfig';
 import PacientesPanel from './PacientesPanel';
+import BibliotecaAdmin from './BibliotecaAdmin';
 import XenomAdmin from './XenomAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
@@ -260,6 +261,7 @@ function Dashboard({
     { label: 'Operación diaria', items: [
       { id: 'agenda-director', label: 'Agenda' },
       { id: 'pacientes', label: 'Pacientes' },
+      { id: 'biblioteca', label: 'Biblioteca' },
       { id: 'caja', label: 'Caja y comisiones' },
     ]},
     { label: 'Reportes', items: [
@@ -345,6 +347,10 @@ function Dashboard({
             <section><div className="card">
               <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} empresaSlug={empresa?.slug} />
             </div></section>
+          )}
+
+          {activeSection === 'biblioteca' && (
+            <section><div className="card"><BibliotecaAdmin empresaSlug={empresa?.slug} /></div></section>
           )}
 
           {necesitaStats && !stats ? (
