@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { MODALIDADES } from '../lib/agendaEstados';
+import PacienteSelector from './PacienteSelector';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -23,8 +24,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
   const [profesional, setProfesional] = useState(initial?.profesional || '');
   const [servicio, setServicio] = useState('');
   const [modalidad, setModalidad] = useState(initial?.modalidad || 'presencial');
-  const [pacienteNombre, setPacienteNombre] = useState('');
-  const [pacienteTelefono, setPacienteTelefono] = useState('');
+  const [paciente, setPaciente] = useState(null);
   const [financiador, setFinanciador] = useState('Particular');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -40,8 +40,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
     setProfesional(initial?.profesional || '');
     setServicio('');
     setModalidad(initial?.modalidad || 'presencial');
-    setPacienteNombre('');
-    setPacienteTelefono('');
+    setPaciente(null);
     setFinanciador('Particular');
     setErrorMsg('');
     setSlots(null);
@@ -73,7 +72,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
 
   if (!open) return null;
 
-  const puedeGuardar = fecha && hora && profesional && servicio && pacienteNombre.trim();
+  const puedeGuardar = fecha && hora && profesional && servicio && paciente;
 
   async function confirmar() {
     if (!svcData || !puedeGuardar) return;
@@ -84,7 +83,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fecha, hora, profesional, servicio: svcData.nombre, duracion: svcData.duracion,
-          pacienteNombre, pacienteTelefono, financiador, modalidad
+          pacienteId: paciente.id, financiador, modalidad
         })
       });
       const data = await res.json();
@@ -163,12 +162,9 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
             </div>
           </div>
           <div className="field" style={{ gridColumn: '1 / -1' }}><label>Paciente</label>
-            <input value={pacienteNombre} onChange={e => setPacienteNombre(e.target.value)} autoFocus={!!hora} />
+            <PacienteSelector value={paciente} onChange={setPaciente} />
           </div>
-          <div className="field"><label>Teléfono (opcional)</label>
-            <input value={pacienteTelefono} onChange={e => setPacienteTelefono(e.target.value)} />
-          </div>
-          <div className="field"><label>Financiador</label>
+          <div className="field" style={{ gridColumn: '1 / -1' }}><label>Financiador</label>
             <input value={financiador} onChange={e => setFinanciador(e.target.value)} />
           </div>
         </div>

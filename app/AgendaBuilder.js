@@ -40,6 +40,7 @@ export default function AgendaBuilder({ empresaSlug }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [compartirMenuOpen, setCompartirMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalInitial, setModalInitial] = useState(null);
 
@@ -95,6 +96,22 @@ export default function AgendaBuilder({ empresaSlug }) {
       ? `https://wa.me/${telefono.replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`
       : `https://wa.me/?text=${encodeURIComponent(texto)}`;
     window.open(url, '_blank');
+  }
+
+  function compartirLinkReserva() {
+    const origen = typeof window !== 'undefined' ? window.location.origin : '';
+    const link = `${origen}/reservar/${empresaSlug}`;
+    const texto = `Hola! Te paso el link para que saques tu turno en ${empresaNombre || 'el centro'} cuando te quede más cómodo: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+    setCompartirMenuOpen(false);
+  }
+
+  function compartirLinkPrefiltro() {
+    const origen = typeof window !== 'undefined' ? window.location.origin : '';
+    const link = `${origen}/prefiltro/${empresaSlug}`;
+    const texto = `Hola! Antes de tu primera consulta en ${empresaNombre || 'el centro'} te pedimos que completes estos datos, no te lleva más de un minuto: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+    setCompartirMenuOpen(false);
   }
 
   function abrirModal(initial) {
@@ -162,7 +179,31 @@ export default function AgendaBuilder({ empresaSlug }) {
           ))}
         </div>
 
-        <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <button className="icon-btn" onClick={() => setCompartirMenuOpen(v => !v)}>Compartir por WhatsApp ▾</button>
+            {compartirMenuOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setCompartirMenuOpen(false)} />
+                <div style={{
+                  position: 'absolute', top: '110%', left: 0, zIndex: 41, background: '#fff',
+                  border: '1px solid var(--border-strong)', borderRadius: 10, boxShadow: '0 12px 28px -16px rgba(21,39,42,.25)',
+                  minWidth: 240, overflow: 'hidden'
+                }}>
+                  {[
+                    ['Link para agendar un turno', compartirLinkReserva],
+                    ['Entrevista de prefiltro (primera vez)', compartirLinkPrefiltro]
+                  ].map(([label, fn]) => (
+                    <button key={label} onClick={fn} style={{
+                      display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px',
+                      border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13
+                    }}>{label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div style={{ position: 'relative' }}>
           <button className="icon-btn primary" onClick={() => setQuickMenuOpen(v => !v)}>+ Nuevo ▾</button>
           {quickMenuOpen && (
             <>
@@ -185,6 +226,7 @@ export default function AgendaBuilder({ empresaSlug }) {
               </div>
             </>
           )}
+          </div>
         </div>
       </div>
 

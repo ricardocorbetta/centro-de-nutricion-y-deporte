@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LOGO_DATA_URI } from '../lib/logo';
 import { fmtMoney } from '../lib/stats';
 import AgendaBuilder from './AgendaBuilder';
+import PacienteSelector from './PacienteSelector';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -16,9 +17,9 @@ export default function SecretariaView({ name, username, empresa }) {
 
   const [cobros, setCobros] = useState([]);
   const [form, setForm] = useState({
-    fecha: todayISO(), pacienteNombre: '', pacienteTelefono: '',
-    profesional: '', servicio: '', monto: '', medioPago: 'Efectivo'
+    fecha: todayISO(), profesional: '', servicio: '', monto: '', medioPago: 'Efectivo'
   });
+  const [pacienteCobro, setPacienteCobro] = useState(null);
   const [formStatus, setFormStatus] = useState({ msg: '', err: false });
 
   const [resumenHoy, setResumenHoy] = useState(null);
@@ -64,12 +65,13 @@ export default function SecretariaView({ name, username, empresa }) {
     try {
       const res = await fetch('/api/cobros', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, pacienteId: pacienteCobro?.id || null })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setFormStatus({ msg: 'Cobro guardado.', err: false });
-      setForm(f => ({ ...f, pacienteNombre: '', pacienteTelefono: '', servicio: '', monto: '' }));
+      setForm(f => ({ ...f, servicio: '', monto: '' }));
+      setPacienteCobro(null);
       cargarCobrosHoy();
       cargarResumenHoy();
     } catch (err) {
@@ -154,8 +156,9 @@ export default function SecretariaView({ name, username, empresa }) {
                     {MEDIOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
-                <div className="field"><label>Paciente (opcional)</label><input value={form.pacienteNombre} onChange={e => setForm(f => ({ ...f, pacienteNombre: e.target.value }))} /></div>
-                <div className="field"><label>Teléfono (opcional)</label><input value={form.pacienteTelefono} onChange={e => setForm(f => ({ ...f, pacienteTelefono: e.target.value }))} /></div>
+                <div className="field" style={{ gridColumn: '1 / -1' }}><label>Paciente (opcional)</label>
+                  <PacienteSelector value={pacienteCobro} onChange={setPacienteCobro} />
+                </div>
               </form>
               <button className="icon-btn primary" onClick={submitCobro} style={{ marginTop: 4 }}>Guardar cobro</button>
               {formStatus.msg && <div style={{ marginTop: 10 }}><span className={'status-msg' + (formStatus.err ? ' err' : '')}>{formStatus.msg}</span></div>}

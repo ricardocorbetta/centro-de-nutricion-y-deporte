@@ -15,6 +15,7 @@ import CajaComisionesSection from './CajaComisionesSection';
 import ProfesionalesAdmin from './ProfesionalesAdmin';
 import AgendaBuilder from './AgendaBuilder';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
+import PacientesPanel from './PacientesPanel';
 import XenomAdmin from './XenomAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
@@ -257,7 +258,7 @@ function Dashboard({
     { id: 'google-calendar', label: 'Google Calendar' },
   ];
 
-  const necesitaStats = ['resumen', 'equipo', 'pacientes', 'simulador', 'oportunidad'].includes(activeSection);
+  const necesitaStats = ['resumen', 'equipo', 'simulador', 'oportunidad'].includes(activeSection);
 
   return (
     <>
@@ -316,6 +317,12 @@ function Dashboard({
             <section><div className="card"><AgendaBuilder empresaSlug={empresa?.slug} /></div></section>
           )}
 
+          {activeSection === 'pacientes' && (
+            <section><div className="card">
+              <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} />
+            </div></section>
+          )}
+
           {necesitaStats && !stats ? (
             <div style={{ padding: '40px 0', fontFamily: 'var(--mono)' }}>Cargando datos del período…</div>
           ) : (
@@ -341,10 +348,6 @@ function Dashboard({
               )}
               {activeSection === 'equipo' && stats?.isManual && (
                 <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no tiene desglose por profesional.</p>
-              )}
-
-              {activeSection === 'pacientes' && stats && (
-                <section><div className="card"><StatusPatientsSection stats={stats} /></div></section>
               )}
 
               {activeSection === 'simulador' && stats && (

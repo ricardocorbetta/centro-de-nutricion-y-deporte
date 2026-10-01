@@ -34,10 +34,27 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Ese horario se acaba de ocupar. Elegí otro, por favor.' }, { status: 409 });
     }
 
+    // Busca si ya existe una ficha con ese teléfono (identificador más confiable acá, no hay login);
+    // si no existe, crea una nueva. Mejor esfuerzo: si falla, el turno igual se guarda sin ficha vinculada.
+    let pacienteId = null;
+    try {
+      if (pacienteTelefono) {
+        const { data: existente } = await sb.from('pacientes').select('id').eq('empresa_id', empresaId).eq('telefono', pacienteTelefono).limit(1).maybeSingle();
+        if (existente) pacienteId = existente.id;
+      }
+      if (!pacienteId) {
+        const { data: nuevo } = await sb.from('pacientes').insert({
+          empresa_id: empresaId, nombre: pacienteNombre, telefono: pacienteTelefono || null
+        }).select('id').single();
+        if (nuevo) pacienteId = nuevo.id;
+      }
+    } catch (e) { /* no bloquea la reserva */ }
+
     const { data: turno, error } = await sb.from('turnos_propios').insert({
       empresa_id: empresaId,
       day: fecha, time: hora, resource: profesional, service: servicio, duration: duracion,
       status: 'booked', financier: 'Particular',
+      paciente_id: pacienteId,
       paciente_nombre: pacienteNombre, paciente_telefono: pacienteTelefono || null,
       origen: 'reserva_publica'
     }).select().single();

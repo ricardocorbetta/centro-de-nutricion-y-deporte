@@ -7,19 +7,27 @@ import { crearEventoCalendario } from '../../../lib/googleCalendar';
 export const dynamic = 'force-dynamic';
 
 // POST: crea un turno "a mano" (lo carga la secretaria o la directora desde la agenda interna).
-// Body: { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador, modalidad }
+// Body: { fecha, hora, profesional, servicio, duracion, pacienteId?, pacienteNombre, pacienteTelefono, financiador, modalidad }
+// pacienteId (opcional): si viene de una ficha ya creada, se usa su nombre/teléfono como snapshot del turno.
 export async function POST(request) {
   const { session, error } = requireEmpresaSession(request);
   if (error) return error;
   try {
     const body = await request.json();
-    const { fecha, hora, profesional, servicio, duracion, pacienteNombre, pacienteTelefono, financiador, modalidad } = body;
+    let { fecha, hora, profesional, servicio, duracion, pacienteId, pacienteNombre, pacienteTelefono, financiador, modalidad } = body;
     if (!fecha || !hora || !profesional || !servicio || !duracion) {
       return NextResponse.json({ error: 'Faltan datos para crear el turno.' }, { status: 400 });
     }
 
     const sb = supabaseAdmin();
     const empresaId = session.empresaId;
+
+    if (pacienteId) {
+      const { data: pac } = await sb.from('pacientes').select('nombre, telefono').eq('id', pacienteId).eq('empresa_id', empresaId).single();
+      if (!pac) return NextResponse.json({ error: 'Paciente no encontrado.' }, { status: 404 });
+      pacienteNombre = pac.nombre;
+      pacienteTelefono = pac.telefono;
+    }
     const monthKey = fecha.slice(0, 7);
 
     // Revalida que el horario siga libre (contra turnos importados de drManager + los ya cargados acá)
@@ -40,6 +48,7 @@ export async function POST(request) {
       empresa_id: empresaId,
       day: fecha, time: hora, resource: profesional, service: servicio, duration: duracion,
       status: 'booked', financier: financiador || 'Particular',
+      paciente_id: pacienteId || null,
       paciente_nombre: pacienteNombre || null, paciente_telefono: pacienteTelefono || null,
       modalidad: modalidad === 'videollamada' ? 'videollamada' : 'presencial',
       origen: 'staff', creado_por: session.username

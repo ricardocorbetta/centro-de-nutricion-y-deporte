@@ -29,12 +29,17 @@ export async function POST(request) {
   if (error) return error;
   try {
     const body = await request.json();
-    const { fecha, pacienteNombre, pacienteTelefono, profesional, servicio, monto, medioPago } = body;
+    let { fecha, pacienteId, pacienteNombre, pacienteTelefono, profesional, servicio, monto, medioPago } = body;
     if (!fecha || !profesional || !monto || !medioPago) {
       return NextResponse.json({ error: 'Faltan datos obligatorios (fecha, profesional, monto, medio de pago).' }, { status: 400 });
     }
     const sb = supabaseAdmin();
     const empresaId = session.empresaId;
+
+    if (pacienteId) {
+      const { data: pac } = await sb.from('pacientes').select('nombre, telefono').eq('id', pacienteId).eq('empresa_id', empresaId).single();
+      if (pac) { pacienteNombre = pac.nombre; pacienteTelefono = pac.telefono; }
+    }
     const { data: cfgRow } = await sb.from('comisiones_config').select('pct_profesional').eq('empresa_id', empresaId).eq('profesional', profesional).single();
     let pct = cfgRow?.pct_profesional;
     if (pct === undefined || pct === null) {
@@ -43,6 +48,7 @@ export async function POST(request) {
     }
     const { error: dbErr } = await sb.from('cobros').insert({
       empresa_id: empresaId,
+      paciente_id: pacienteId || null,
       fecha, paciente_nombre: pacienteNombre || null, paciente_telefono: pacienteTelefono || null,
       profesional, servicio: servicio || null, monto, medio_pago: medioPago,
       comision_pct: pct, registrado_por: session.username
