@@ -3,6 +3,15 @@
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
 import { ESTADO_LABEL } from '../lib/agendaEstados';
+import ConfirmModal from './ConfirmModal';
+import LoadingSkeleton from './LoadingSkeleton';
+
+const TIPO_ARCHIVO = [
+  { value: 'plan', label: 'Plan alimentario' },
+  { value: 'bioimpedancia', label: 'Bioimpedancia' },
+  { value: 'antropometria', label: 'Antropometría' }
+];
+const TIPO_ARCHIVO_LABEL = Object.fromEntries(TIPO_ARCHIVO.map(t => [t.value, t.label]));
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -18,7 +27,7 @@ const CAMPOS_FICHA = [
 // Listado de pacientes + ficha con historial. "statsSlot" es contenido opcional (las
 // estadísticas de ausentismo/pacientes nuevos que ya existían) que se muestra como
 // una segunda pestaña, para no perder esa vista.
-export default function PacientesPanel({ statsSlot }) {
+export default function PacientesPanel({ statsSlot, empresaSlug }) {
   const [tab, setTab] = useState('listado');
   const [pacientes, setPacientes] = useState([]);
   const [query, setQuery] = useState('');
@@ -156,7 +165,7 @@ export default function PacientesPanel({ statsSlot }) {
       )}
 
       {seleccionado && (
-        <FichaPacienteModal id={seleccionado} onClose={() => setSeleccionado(null)} onUpdated={() => cargar(query)} />
+        <FichaPacienteModal id={seleccionado} empresaSlug={empresaSlug} onClose={() => setSeleccionado(null)} onUpdated={() => cargar(query)} />
       )}
     </>
   );
@@ -215,7 +224,7 @@ function PacienteFormModal({ onClose, onSaved, inicial }) {
   );
 }
 
-function FichaPacienteModal({ id, onClose, onUpdated }) {
+function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -314,6 +323,10 @@ function FichaPacienteModal({ id, onClose, onUpdated }) {
               </tbody>
             </table>
 
+            <AccesoPortal pacienteId={id} empresaSlug={empresaSlug} pacienteNombre={data.paciente.nombre} pacienteTelefono={data.paciente.telefono} />
+
+            <ArchivosPaciente pacienteId={id} />
+
             <div style={{ marginTop: 16 }}>
               <button className="icon-btn" onClick={onClose}>Cerrar</button>
             </div>
@@ -329,5 +342,185 @@ function FichaPacienteModal({ id, onClose, onUpdated }) {
         />
       )}
     </div>
+  );
+}
+
+// Portal de pacientes (Sector A): acceso (usuario/clave) y vigencia (18 meses desde la última consulta cumplida).
+function AccesoPortal({ pacienteId, empresaSlug, pacienteNombre, pacienteTelefono }) {
+  const [estado, setEstado] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generando, setGenerando] = useState(false);
+  const [credenciales, setCredenciales] = useState(null); // { username, password } recién generadas
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function cargar() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/portal`);
+      const data = await res.json();
+      if (!data.error) setEstado(data);
+    } catch (e) {} finally { setLoading(false); }
+  }
+
+  useEffect(() => { cargar(); }, [pacienteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function generar() {
+    setGenerando(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCredenciales(data);
+      cargar();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setGenerando(false);
+    }
+  }
+
+  const link = empresaSlug && typeof window !== 'undefined' ? `${window.location.origin}/portal/${empresaSlug}` : '';
+  const mensajeWhatsapp = credenciales ? encodeURIComponent(
+    `Hola ${pacienteNombre.split(' ')[0]}! Ya tenés acceso a tu portal de CND, donde vas a encontrar tus planes y evaluaciones.\n\n` +
+    `Entrá acá: ${link}\nUsuario: ${credenciales.username}\nClave: ${credenciales.password}`
+  ) : '';
+  const telWhatsapp = (pacienteTelefono || '').replace(/\D/g, '');
+
+  return (
+    <>
+      <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Portal del paciente</h2></div>
+      {loading ? <LoadingSkeleton lines={2} /> : (
+        <div className="card" style={{ padding: '14px 16px', marginBottom: 18 }}>
+          {estado?.tieneAcceso ? (
+            <>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>
+                Usuario: <b style={{ fontFamily: 'var(--mono)' }}>{estado.username}</b>
+              </div>
+              <div style={{ fontSize: 12.5, color: estado.vigente ? 'var(--primary)' : 'var(--rust)', marginBottom: 10 }}>
+                {estado.ultimaConsulta
+                  ? (estado.vigente ? `Vigente hasta ${estado.venceEl} (18 meses desde la última consulta).` : `Vencido desde el ${estado.venceEl}.`)
+                  : 'Todavía no tiene consultas cumplidas registradas — sin acceso a archivos hasta la primera.'}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 10 }}>Este paciente todavía no tiene acceso al portal.</div>
+          )}
+
+          {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 12.5, marginBottom: 8 }}>{errorMsg}</p>}
+
+          {!credenciales ? (
+            <button className="icon-btn primary" disabled={generando} onClick={generar}>
+              {generando ? 'Generando…' : estado?.tieneAcceso ? 'Regenerar clave' : 'Generar acceso'}
+            </button>
+          ) : (
+            <div style={{ background: 'var(--surface-alt)', borderRadius: 8, padding: '10px 12px', fontSize: 12.5 }}>
+              <div style={{ marginBottom: 6 }}>Usuario: <b style={{ fontFamily: 'var(--mono)' }}>{credenciales.username}</b> · Clave: <b style={{ fontFamily: 'var(--mono)' }}>{credenciales.password}</b></div>
+              <div style={{ color: 'var(--ink-faint)', marginBottom: 8 }}>Guardala ahora — no se vuelve a mostrar. Pasásela al paciente por WhatsApp:</div>
+              {telWhatsapp ? (
+                <a className="icon-btn primary" href={`https://wa.me/${telWhatsapp}?text=${mensajeWhatsapp}`} target="_blank" rel="noreferrer">Enviar por WhatsApp</a>
+              ) : (
+                <span style={{ color: 'var(--ink-faint)' }}>Este paciente no tiene teléfono cargado — copiá usuario y clave manualmente.</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+// Archivos del paciente (planes en PDF, bioimpedancia, antropometría) — los carga el profesional
+// y quedan disponibles para el paciente en su portal mientras su acceso esté vigente.
+function ArchivosPaciente({ pacienteId }) {
+  const [archivos, setArchivos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
+  const [confirmando, setConfirmando] = useState(null);
+
+  const [tipo, setTipo] = useState('plan');
+  const [categoria, setCategoria] = useState('');
+  const [fecha, setFecha] = useState(todayISO());
+  const [file, setFile] = useState(null);
+
+  async function cargar() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/archivos`);
+      const data = await res.json();
+      if (!data.error) setArchivos(data.archivos || []);
+    } catch (e) {} finally { setLoading(false); }
+  }
+
+  useEffect(() => { cargar(); }, [pacienteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function subir() {
+    if (!file) { setErrorMsg('Elegí un archivo (PDF).'); return; }
+    setSubiendo(true);
+    setErrorMsg('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('tipo', tipo);
+      form.append('categoria', categoria);
+      form.append('nombre', categoria || file.name);
+      form.append('fecha', fecha);
+      const res = await fetch(`/api/pacientes/${pacienteId}/archivos`, { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCategoria(''); setFile(null);
+      cargar();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  function borrar(archivo) {
+    setConfirmando({
+      mensaje: `¿Quitar "${archivo.categoria || archivo.nombre}" de los archivos del paciente?`, destructivo: true, textoConfirmar: 'Quitar',
+      onConfirm: async () => {
+        await fetch(`/api/pacientes/${pacienteId}/archivos/${archivo.id}`, { method: 'DELETE' });
+        cargar();
+      }
+    });
+  }
+
+  return (
+    <>
+      <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Archivos (planes y evaluaciones)</h2></div>
+
+      {loading ? <LoadingSkeleton lines={2} /> : (
+        <table className="plain" style={{ marginBottom: 12 }}>
+          <thead><tr><th>Tipo</th><th>Nombre</th><th>Fecha</th><th></th></tr></thead>
+          <tbody>
+            {archivos.map(a => (
+              <tr key={a.id}>
+                <td><span className="tag">{TIPO_ARCHIVO_LABEL[a.tipo] || a.tipo}</span></td>
+                <td>{a.categoria || a.nombre}</td>
+                <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{a.fecha}</td>
+                <td><button className="icon-btn" onClick={() => borrar(a)}>Quitar</button></td>
+              </tr>
+            ))}
+            {!archivos.length && <tr><td colSpan={4} style={{ color: 'var(--ink-faint)' }}>Sin archivos cargados todavía.</td></tr>}
+          </tbody>
+        </table>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
+        <select className="pill-select" value={tipo} onChange={e => setTipo(e.target.value)}>
+          {TIPO_ARCHIVO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <input placeholder="Nombre (ej: Plan de pretemporada)" value={categoria} onChange={e => setCategoria(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
+        <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+        <input type="file" accept="application/pdf" onChange={e => setFile(e.target.files?.[0] || null)} />
+        <button className="icon-btn primary" disabled={subiendo} onClick={subir}>{subiendo ? 'Subiendo…' : 'Subir'}</button>
+      </div>
+      {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 12.5, marginTop: -10 }}>{errorMsg}</p>}
+
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
+    </>
   );
 }

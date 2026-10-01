@@ -343,7 +343,7 @@ function Dashboard({
 
           {activeSection === 'pacientes' && (
             <section><div className="card">
-              <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} />
+              <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} empresaSlug={empresa?.slug} />
             </div></section>
           )}
 
