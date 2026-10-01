@@ -127,8 +127,20 @@ export default function PacientesPanel({ statsSlot }) {
                 </tr>
               ))}
               {!loading && !pacientes.length && (
-                <tr><td colSpan={5} style={{ color: 'var(--ink-faint)' }}>
-                  {query ? 'No hay pacientes que coincidan con la búsqueda.' : 'Todavía no hay pacientes cargados — se van sumando solos desde la agenda y la reserva pública.'}
+                <tr><td colSpan={5}>
+                  <div className="empty-state">
+                    <span className="icon">🗂️</span>
+                    <span className="title">{query ? 'Sin coincidencias' : 'Todavía no hay pacientes cargados'}</span>
+                    <span className="hint">
+                      {query ? 'Probá con otro nombre o teléfono.' : 'Se van a ir sumando solos desde la agenda, la caja y la reserva pública — o cargá uno manualmente.'}
+                    </span>
+                  </div>
+                </td></tr>
+              )}
+              {loading && (
+                <tr><td colSpan={5}>
+                  <div className="skeleton skeleton-line" style={{ width: '65%' }} />
+                  <div className="skeleton skeleton-line" style={{ width: '50%' }} />
                 </td></tr>
               )}
             </tbody>
@@ -229,7 +241,13 @@ function FichaPacienteModal({ id, onClose, onUpdated }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
       <div className="card" style={{ width: 560, maxWidth: '92vw', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        {loading ? <p style={{ color: 'var(--ink-faint)' }}>Cargando…</p> : errorMsg ? <p style={{ color: 'var(--rust)' }}>{errorMsg}</p> : data && (
+        {loading ? (
+          <>
+            <div className="skeleton skeleton-line" style={{ width: '40%', height: 20 }} />
+            <div className="skeleton skeleton-block" style={{ marginBottom: 14 }} />
+            <div className="skeleton skeleton-block" />
+          </>
+        ) : errorMsg ? <p style={{ color: 'var(--rust)' }}>{errorMsg}</p> : data && (
           <>
             <div className="section-head">
               <span className="dot" /><h2>{data.paciente.nombre}</h2>

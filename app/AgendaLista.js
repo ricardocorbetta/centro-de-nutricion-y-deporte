@@ -84,7 +84,20 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
             </tr>
           ))}
           {!filtrados.length && !loading && (
-            <tr><td colSpan={7} style={{ color: 'var(--ink-faint)' }}>No hay turnos en esta categoría para el día elegido.</td></tr>
+            <tr><td colSpan={7}>
+              <div className="empty-state">
+                <span className="icon">📅</span>
+                <span className="title">Sin turnos en esta categoría</span>
+                <span className="hint">No hay turnos para el día elegido con este filtro. Probá otra fecha o tocá &quot;+ Nuevo&quot; para cargar uno.</span>
+              </div>
+            </td></tr>
+          )}
+          {loading && (
+            <tr><td colSpan={7}>
+              <div className="skeleton skeleton-line" style={{ width: '70%' }} />
+              <div className="skeleton skeleton-line" style={{ width: '55%' }} />
+              <div className="skeleton skeleton-line" style={{ width: '60%' }} />
+            </td></tr>
           )}
         </tbody>
       </table>

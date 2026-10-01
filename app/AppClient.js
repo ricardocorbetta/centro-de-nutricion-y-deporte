@@ -217,7 +217,14 @@ function DirectorApp({ name, username, empresa }) {
     }
   }
 
-  if (loading) return <div style={{ padding: 40, fontFamily: 'var(--sans)' }}>Cargando panel…</div>;
+  if (loading) return (
+    <div className="wrap" style={{ maxWidth: 1240 }}>
+      <div className="card skeleton" style={{ height: 54, marginBottom: 16 }} />
+      <div className="kpi-grid">
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="kpi skeleton" style={{ height: 92 }} />)}
+      </div>
+    </div>
+  );
   if (errorMsg) return <div style={{ padding: 40, fontFamily: 'var(--sans)', color: '#C0562F' }}>{errorMsg}</div>;
 
   return (
@@ -324,7 +331,9 @@ function Dashboard({
           )}
 
           {necesitaStats && !stats ? (
-            <div style={{ padding: '40px 0', fontFamily: 'var(--mono)' }}>Cargando datos del período…</div>
+            <div className="kpi-grid">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="kpi skeleton" style={{ height: 92 }} />)}
+            </div>
           ) : (
             <>
               {activeSection === 'resumen' && stats && (
