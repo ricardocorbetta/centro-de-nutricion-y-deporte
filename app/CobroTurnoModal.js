@@ -29,6 +29,9 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
   const [guardando, setGuardando] = useState(false);
   const [avisoAtendido, setAvisoAtendido] = useState(false);
 
+  const [precioInput, setPrecioInput] = useState('');
+  const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+
   async function cargar() {
     setLoading(true);
     try {
@@ -38,6 +41,7 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
       setEstado(data);
       setTipoCobro(data.totalCobrado > 0 ? 'saldo' : 'anticipo');
       if (data.saldoPendiente !== null) setMonto(String(data.saldoPendiente));
+      if (data.precioTotal === null) setPrecioInput(data.precioSugerido ? String(data.precioSugerido) : '');
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -48,6 +52,24 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
   useEffect(() => { if (turno) cargar(); }, [turno?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!turno) return null;
+
+  async function guardarPrecio() {
+    const precioTotal = Number(precioInput);
+    if (!precioTotal || precioTotal <= 0) { setErrorMsg('Ingresá un precio válido.'); return; }
+    setGuardandoPrecio(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`/api/turnos/${turno.id}/cobros`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ precioTotal }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await cargar();
+      onChanged?.();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setGuardandoPrecio(false);
+    }
+  }
 
   async function cobrarPorMP() {
     setGenerandoMP(true);
@@ -108,11 +130,29 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
           <div className="skeleton skeleton-block" />
         ) : (
           <>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-              <div className="kpi" style={{ flex: 1 }}><div className="label">Precio</div><div className="value" style={{ fontSize: 16 }}>{estado.precioTotal !== null ? fmtMoney(estado.precioTotal) : '—'}</div></div>
-              <div className="kpi" style={{ flex: 1 }}><div className="label">Cobrado</div><div className="value" style={{ fontSize: 16 }}>{fmtMoney(estado.totalCobrado)}</div></div>
-              <div className="kpi" style={{ flex: 1 }}><div className="label">Saldo</div><div className="value" style={{ fontSize: 16, color: estado.saldoPendiente > 0 ? 'var(--rust)' : 'var(--primary)' }}>{estado.saldoPendiente !== null ? fmtMoney(estado.saldoPendiente) : '—'}</div></div>
-            </div>
+            {estado.precioTotal === null ? (
+              <div style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-strong)', borderRadius: 10, padding: 14, marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Este turno todavía no tiene un precio cargado</div>
+                <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', margin: '0 0 10px' }}>
+                  Definilo para poder cobrarlo{estado.precioSugerido ? ` (sugerido según la duración: ${fmtMoney(estado.precioSugerido)})` : ''}.
+                </p>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <div className="field" style={{ margin: 0, flex: 1 }}>
+                    <label>Precio total</label>
+                    <input type="number" value={precioInput} onChange={e => setPrecioInput(e.target.value)} placeholder="0" />
+                  </div>
+                  <button className="icon-btn primary" disabled={guardandoPrecio} onClick={guardarPrecio}>
+                    {guardandoPrecio ? 'Guardando…' : 'Guardar precio'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+                <div className="kpi" style={{ flex: 1 }}><div className="label">Precio</div><div className="value" style={{ fontSize: 16 }}>{fmtMoney(estado.precioTotal)}</div></div>
+                <div className="kpi" style={{ flex: 1 }}><div className="label">Cobrado</div><div className="value" style={{ fontSize: 16 }}>{fmtMoney(estado.totalCobrado)}</div></div>
+                <div className="kpi" style={{ flex: 1 }}><div className="label">Saldo</div><div className="value" style={{ fontSize: 16, color: estado.saldoPendiente > 0 ? 'var(--rust)' : 'var(--primary)' }}>{fmtMoney(estado.saldoPendiente)}</div></div>
+              </div>
+            )}
 
             {estado.cobros.length > 0 && (
               <table className="plain" style={{ marginBottom: 16 }}>
@@ -131,7 +171,7 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
               </table>
             )}
 
-            {estado.saldoPendiente === 0 && estado.precioTotal !== null ? (
+            {estado.precioTotal === null ? null : estado.saldoPendiente === 0 ? (
               <div className="empty-state" style={{ marginBottom: 10 }}>
                 <span className="icon">✅</span>
                 <span className="title">Ya está todo cobrado</span>

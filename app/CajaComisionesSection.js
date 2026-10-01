@@ -31,6 +31,51 @@ function buildMonthOptions() {
   return opts;
 }
 
+function fmtFechaLarga(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function fmtHora(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function imprimirCierre({ fecha, resumen, cerradoPor, cerradoEn }) {
+  const profRows = Object.entries(resumen.porProfesional || {})
+    .map(([name, d]) => `<tr><td>${name}</td><td>$${Math.round(d.monto).toLocaleString('es-AR')}</td><td>$${Math.round(d.comision).toLocaleString('es-AR')}</td><td>${d.count}</td></tr>`).join('');
+  const medioRows = Object.entries(resumen.porMedioPago || {})
+    .map(([medio, monto]) => `<tr><td>${medio}</td><td>$${Math.round(monto).toLocaleString('es-AR')}</td></tr>`).join('');
+  const w = window.open('', '_blank', 'width=460,height=700');
+  w.document.write(`
+    <html><head><title>Cierre de caja — ${fecha}</title>
+    <style>
+      body{font-family:sans-serif;padding:28px;color:#15272A;}
+      h1{font-size:16px;margin:0 0 2px;text-transform:capitalize;}
+      .sub{font-size:11px;color:#5C6E70;margin-bottom:18px;}
+      h2{font-size:12.5px;margin:18px 0 6px;}
+      table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:10px;}
+      td,th{padding:5px 0;border-bottom:1px solid #eee;text-align:left;}
+      .total{font-size:17px;font-weight:700;margin-top:12px;}
+      .firma{margin-top:50px;border-top:1px solid #999;padding-top:6px;font-size:11px;color:#5C6E70;width:220px;}
+    </style></head><body>
+    <h1>Cierre de caja — ${fmtFechaLarga(fecha)}</h1>
+    <div class="sub">Cerrado por ${cerradoPor || '-'}${cerradoEn ? ' · ' + new Date(cerradoEn).toLocaleString('es-AR') : ''}</div>
+    <h2>Por medio de pago</h2>
+    <table><tbody>${medioRows || '<tr><td>Sin cobros</td></tr>'}</tbody></table>
+    <h2>Por profesional (comisiones)</h2>
+    <table><thead><tr><th>Profesional</th><th>Cobrado</th><th>Comisión</th><th>Turnos</th></tr></thead><tbody>${profRows || '<tr><td colSpan=4>Sin cobros</td></tr>'}</tbody></table>
+    <div class="total">Total cobrado: $${Math.round(resumen.totalCobrado).toLocaleString('es-AR')}</div>
+    <div>Comisiones a pagar: $${Math.round(resumen.totalComisionProfesionales).toLocaleString('es-AR')}</div>
+    <div>Queda para el centro: $${Math.round(resumen.totalCentro).toLocaleString('es-AR')}</div>
+    <div class="firma">Firma</div>
+    <script>window.print();</script>
+    </body></html>
+  `);
+  w.document.close();
+}
+
 function imprimirLiquidacion({ profesional, desde, hasta, monto, comision, pct, count }) {
   const w = window.open('', '_blank', 'width=420,height=600');
   w.document.write(`
@@ -61,10 +106,13 @@ function imprimirLiquidacion({ profesional, desde, hasta, monto, comision, pct, 
 }
 
 export default function CajaComisionesSection() {
-  const [modo, setModo] = useState('mes'); // 'mes' | 'rango'
+  const [modo, setModo] = useState('dia'); // 'dia' | 'mes' | 'rango'
   const [mes, setMes] = useState(currentMonthKey());
   const [desde, setDesde] = useState(firstOfMonthISO());
   const [hasta, setHasta] = useState(todayISO());
+  const [fechaDia, setFechaDia] = useState(todayISO());
+  const [cierreDia, setCierreDia] = useState(null);
+  const [cerrando, setCerrando] = useState(false);
   const [resumen, setResumen] = useState(null);
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -92,10 +140,32 @@ export default function CajaComisionesSection() {
     }
   }
 
+  async function cargarDia(fecha) {
+    const f = fecha || fechaDia;
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const [resRes, cfgRes, cierreRes] = await Promise.all([
+        fetch(`/api/caja-resumen?desde=${f}&hasta=${f}`),
+        fetch('/api/comisiones-config'),
+        fetch(`/api/caja/cierre?fecha=${f}`)
+      ]);
+      const resData = await resRes.json();
+      const cfgData = await cfgRes.json();
+      const cierreData = await cierreRes.json();
+      if (resData.error) throw new Error(resData.error);
+      setResumen(resData);
+      setConfig(cfgData.config || []);
+      setCierreDia(cierreData.cierre || null);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const { desde: d, hasta: h } = monthRange(mes);
-    setDesde(d); setHasta(h);
-    cargar(d, h);
+    cargarDia(todayISO());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleMesChange(m) {
@@ -103,6 +173,48 @@ export default function CajaComisionesSection() {
     const { desde: d, hasta: h } = monthRange(m);
     setDesde(d); setHasta(h);
     cargar(d, h);
+  }
+
+  function handleModoChange(m) {
+    setModo(m);
+    if (m === 'dia') cargarDia(fechaDia);
+    else if (m === 'mes') { const { desde: d, hasta: h } = monthRange(mes); setDesde(d); setHasta(h); cargar(d, h); }
+    else cargar(desde, hasta);
+  }
+
+  function handleFechaDiaChange(f) {
+    setFechaDia(f);
+    cargarDia(f);
+  }
+
+  async function cerrarCaja() {
+    setCerrando(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/caja/cierre', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fecha: fechaDia }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCierreDia(data.cierre);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setCerrando(false);
+    }
+  }
+
+  async function reabrirCaja() {
+    setCerrando(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`/api/caja/cierre?fecha=${fechaDia}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCierreDia(null);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setCerrando(false);
+    }
   }
 
   async function savePct(profesional, pct) {
@@ -128,11 +240,20 @@ export default function CajaComisionesSection() {
         <span className="note">visible solo para dirección</span></div>
 
       <div className="tabbar">
-        <button className={modo === 'mes' ? 'active' : ''} onClick={() => setModo('mes')}>Por mes</button>
-        <button className={modo === 'rango' ? 'active' : ''} onClick={() => setModo('rango')}>Rango personalizado</button>
+        <button className={modo === 'dia' ? 'active' : ''} onClick={() => handleModoChange('dia')}>Cierre del día</button>
+        <button className={modo === 'mes' ? 'active' : ''} onClick={() => handleModoChange('mes')}>Por mes</button>
+        <button className={modo === 'rango' ? 'active' : ''} onClick={() => handleModoChange('rango')}>Rango personalizado</button>
       </div>
 
-      {modo === 'mes' ? (
+      {modo === 'dia' ? (
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Día</label>
+            <input type="date" value={fechaDia} onChange={e => handleFechaDiaChange(e.target.value)} />
+          </div>
+          {loading && <div style={{ width: 90 }}><LoadingSkeleton lines={1} widths={['100%']} /></div>}
+        </div>
+      ) : modo === 'mes' ? (
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 20 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 4 }}>Mes de cierre</label>
@@ -157,6 +278,39 @@ export default function CajaComisionesSection() {
       )}
 
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
+
+      {modo === 'dia' && resumen && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          background: cierreDia ? 'rgba(31,122,104,0.08)' : 'var(--surface-alt)',
+          border: '1px solid var(--border-strong)', borderRadius: 10, padding: 14, marginBottom: 18
+        }}>
+          {cierreDia ? (
+            <>
+              <span style={{ fontSize: 20 }}>✅</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Caja cerrada</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                  Por {cierreDia.cerrado_por || '-'} a las {fmtHora(cierreDia.cerrado_en)} · Total {fmtMoney(cierreDia.total_cobrado)}
+                </div>
+              </div>
+              <button className="icon-btn" onClick={() => imprimirCierre({ fecha: fechaDia, resumen, cerradoPor: cierreDia.cerrado_por, cerradoEn: cierreDia.cerrado_en })}>Imprimir cierre</button>
+              <button className="icon-btn" disabled={cerrando} onClick={reabrirCaja}>{cerrando ? 'Reabriendo…' : 'Reabrir'}</button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 20 }}>🔓</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Caja todavía abierta</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                  {resumen.cantidadCobros} cobro(s) por {fmtMoney(resumen.totalCobrado)} hasta ahora. Cerrala cuando termine el día.
+                </div>
+              </div>
+              <button className="icon-btn primary" disabled={cerrando} onClick={cerrarCaja}>{cerrando ? 'Cerrando…' : 'Cerrar caja del día'}</button>
+            </>
+          )}
+        </div>
+      )}
 
       {resumen && resumen.cantidadEstimados > 0 && (
         <div className="gap-callout" style={{ marginBottom: 18 }}>

@@ -2,18 +2,25 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../../lib/auth';
 import { estadoPagoTurno, comisionDe } from '../../../../../lib/cobrosTurno';
+import { priceFor, DEFAULT_PRECIOS } from '../../../../../lib/stats';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'comprobantes-pago';
 
 // GET: precio total / cobrado / saldo pendiente de un turno, y el detalle de cada cobro vinculado
-// (con un link de descarga temporal del comprobante, si lo tiene).
+// (con un link de descarga temporal del comprobante, si lo tiene). Si el turno todavía no tiene un
+// precio_total cargado (turnos viejos, o cargados sin precio), viene también un "precioSugerido"
+// calculado por duración, para precargar el campo de precio en vez de dejarlo vacío.
 export async function GET(request, { params }) {
   const { session, error } = requireEmpresaSession(request);
   if (error) return error;
   try {
     const sb = supabaseAdmin();
-    const estado = await estadoPagoTurno(sb, session.empresaId, params.id);
+    const [estado, { data: turno }, { data: cfg }] = await Promise.all([
+      estadoPagoTurno(sb, session.empresaId, params.id),
+      sb.from('turnos_propios').select('duration').eq('id', params.id).eq('empresa_id', session.empresaId).single(),
+      sb.from('config').select('precios').eq('empresa_id', session.empresaId).single()
+    ]);
     const cobros = await Promise.all(estado.cobros.map(async c => {
       let comprobanteUrl = null;
       if (c.comprobante_path) {
@@ -22,7 +29,27 @@ export async function GET(request, { params }) {
       }
       return { ...c, comprobanteUrl };
     }));
-    return NextResponse.json({ ...estado, cobros });
+    const precioSugerido = estado.precioTotal === null ? priceFor(turno?.duration, cfg?.precios || DEFAULT_PRECIOS) : null;
+    return NextResponse.json({ ...estado, cobros, precioSugerido });
+  } catch (err) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  }
+}
+
+// PATCH: fija o corrige el precio total del turno (por ejemplo cuando se cargó sin precio, o el
+// precio real difiere del sugerido por duración).
+export async function PATCH(request, { params }) {
+  const { session, error } = requireEmpresaSession(request);
+  if (error) return error;
+  try {
+    const body = await request.json();
+    const precioTotal = Number(body.precioTotal);
+    if (!precioTotal || precioTotal <= 0) return NextResponse.json({ error: 'Ingresá un precio válido.' }, { status: 400 });
+    const sb = supabaseAdmin();
+    const { data, error: dbErr } = await sb.from('turnos_propios').update({ precio_total: precioTotal })
+      .eq('id', params.id).eq('empresa_id', session.empresaId).select().single();
+    if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
+    return NextResponse.json({ ok: true, turno: data });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
