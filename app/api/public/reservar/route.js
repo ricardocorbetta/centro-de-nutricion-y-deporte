@@ -4,6 +4,7 @@ import { overlapsAny } from '../../../../lib/scheduling';
 import { resolverEmpresaPorSlug } from '../../../../lib/empresas';
 import { crearEventoCalendario } from '../../../../lib/googleCalendar';
 import { crearPreferencia } from '../../../../lib/mercadoPago';
+import { priceFor, DEFAULT_PRECIOS } from '../../../../lib/stats';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,13 +52,16 @@ export async function POST(request) {
       }
     } catch (e) { /* no bloquea la reserva */ }
 
+    const { data: cfg } = await sb.from('config').select('precios').eq('empresa_id', empresaId).single();
+    const precioTotal = priceFor(duracion, cfg?.precios || DEFAULT_PRECIOS);
+
     const { data: turno, error } = await sb.from('turnos_propios').insert({
       empresa_id: empresaId,
       day: fecha, time: hora, resource: profesional, service: servicio, duration: duracion,
       status: 'booked', financier: 'Particular',
       paciente_id: pacienteId,
       paciente_nombre: pacienteNombre, paciente_telefono: pacienteTelefono || null,
-      origen: 'reserva_publica'
+      origen: 'reserva_publica', precio_total: precioTotal
     }).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

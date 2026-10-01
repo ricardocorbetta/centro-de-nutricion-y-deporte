@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../lib/auth';
 import { overlapsAny } from '../../../lib/scheduling';
 import { crearEventoCalendario } from '../../../lib/googleCalendar';
+import { priceFor, DEFAULT_PRECIOS } from '../../../lib/stats';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function POST(request) {
   if (error) return error;
   try {
     const body = await request.json();
-    let { fecha, hora, profesional, servicio, duracion, pacienteId, pacienteNombre, pacienteTelefono, financiador, modalidad } = body;
+    let { fecha, hora, profesional, servicio, duracion, pacienteId, pacienteNombre, pacienteTelefono, financiador, modalidad, precioTotal } = body;
     if (!fecha || !hora || !profesional || !servicio || !duracion) {
       return NextResponse.json({ error: 'Faltan datos para crear el turno.' }, { status: 400 });
     }
@@ -44,6 +45,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Ese horario se superpone con otro turno de ese profesional.' }, { status: 409 });
     }
 
+    let precio = precioTotal !== undefined && precioTotal !== null && precioTotal !== '' ? Number(precioTotal) : null;
+    if (precio === null) {
+      const { data: cfg } = await sb.from('config').select('precios').eq('empresa_id', empresaId).single();
+      precio = priceFor(duracion, cfg?.precios || DEFAULT_PRECIOS);
+    }
+
     const { data, error: dbErr } = await sb.from('turnos_propios').insert({
       empresa_id: empresaId,
       day: fecha, time: hora, resource: profesional, service: servicio, duration: duracion,
@@ -51,7 +58,7 @@ export async function POST(request) {
       paciente_id: pacienteId || null,
       paciente_nombre: pacienteNombre || null, paciente_telefono: pacienteTelefono || null,
       modalidad: modalidad === 'videollamada' ? 'videollamada' : 'presencial',
-      origen: 'staff', creado_por: session.username
+      origen: 'staff', creado_por: session.username, precio_total: precio
     }).select().single();
 
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });

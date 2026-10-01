@@ -78,7 +78,7 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
                 {t.id ? (
                   <>
                     <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onAbrirRecordatorio(t)}>WhatsApp</button>
-                    {onCobrarMP && <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onCobrarMP(t)}>Cobrar MP</button>}
+                    {onCobrarMP && <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onCobrarMP(t)}>Cobrar</button>}
                   </>
                 ) : (
                   <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>importado</span>

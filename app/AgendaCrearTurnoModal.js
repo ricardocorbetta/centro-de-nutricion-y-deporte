@@ -26,6 +26,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
   const [modalidad, setModalidad] = useState(initial?.modalidad || 'presencial');
   const [paciente, setPaciente] = useState(null);
   const [financiador, setFinanciador] = useState('Particular');
+  const [precioTotal, setPrecioTotal] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -42,6 +43,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
     setModalidad(initial?.modalidad || 'presencial');
     setPaciente(null);
     setFinanciador('Particular');
+    setPrecioTotal('');
     setErrorMsg('');
     setSlots(null);
   }, [open, initial]);
@@ -83,7 +85,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fecha, hora, profesional, servicio: svcData.nombre, duracion: svcData.duracion,
-          pacienteId: paciente.id, financiador, modalidad
+          pacienteId: paciente.id, financiador, modalidad, precioTotal: precioTotal !== '' ? precioTotal : undefined
         })
       });
       const data = await res.json();
@@ -164,8 +166,11 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
           <div className="field" style={{ gridColumn: '1 / -1' }}><label>Paciente</label>
             <PacienteSelector value={paciente} onChange={setPaciente} />
           </div>
-          <div className="field" style={{ gridColumn: '1 / -1' }}><label>Financiador</label>
+          <div className="field"><label>Financiador</label>
             <input value={financiador} onChange={e => setFinanciador(e.target.value)} />
+          </div>
+          <div className="field"><label>Precio total (opcional)</label>
+            <input type="number" value={precioTotal} onChange={e => setPrecioTotal(e.target.value)} placeholder="Automático según duración" />
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../../lib/auth';
 import { crearPreferencia } from '../../../../../lib/mercadoPago';
 import { priceFor, DEFAULT_PRECIOS } from '../../../../../lib/stats';
+import { estadoPagoTurno } from '../../../../../lib/cobrosTurno';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,15 +28,20 @@ export async function POST(request, { params }) {
     }
     if (!turno) return NextResponse.json({ error: 'Turno no encontrado.' }, { status: 404 });
 
-    const monto = body.monto || priceFor(turno.duration, cfg?.precios || DEFAULT_PRECIOS);
-    if (!monto || monto <= 0) return NextResponse.json({ error: 'No se pudo determinar un monto a cobrar.' }, { status: 400 });
+    const estado = await estadoPagoTurno(sb, session.empresaId, turno.id);
+    const yaCobrado = estado.totalCobrado > 0;
+    const precioReferencia = estado.precioTotal ?? priceFor(turno.duration, cfg?.precios || DEFAULT_PRECIOS);
+    const sugerido = yaCobrado ? Math.max(0, precioReferencia - estado.totalCobrado) : precioReferencia;
+    const monto = body.monto || sugerido;
+    if (!monto || monto <= 0) return NextResponse.json({ error: 'No se pudo determinar un monto a cobrar (¿ya está todo cobrado?).' }, { status: 400 });
+    const tipoRef = yaCobrado ? 'saldo' : 'completo';
 
     const origen = request.headers.get('origin') || new URL(request.url).origin;
     const pref = await crearPreferencia({
       accessToken: empresa.mercadopago_access_token,
-      titulo: `${turno.service || 'Consulta'} — ${empresa.nombre}`,
+      titulo: `${tipoRef === 'saldo' ? 'Saldo — ' : ''}${turno.service || 'Consulta'} — ${empresa.nombre}`,
       monto,
-      externalReference: `turno:${turno.id}:tipo:completo`,
+      externalReference: `turno:${turno.id}:tipo:${tipoRef}`,
       backUrl: `${origen}/reservar/${empresa.slug}`,
       notificationUrl: `${origen}/api/public/mercadopago/webhook?empresaId=${empresa.id}`
     });

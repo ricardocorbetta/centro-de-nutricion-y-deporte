@@ -6,6 +6,7 @@ import AgendaLista from './AgendaLista';
 import AgendaSemana from './AgendaSemana';
 import AgendaCrearTurnoModal from './AgendaCrearTurnoModal';
 import ConfirmModal from './ConfirmModal';
+import CobroTurnoModal from './CobroTurnoModal';
 
 const STEP_MIN = 10;
 
@@ -45,6 +46,7 @@ export default function AgendaBuilder({ empresaSlug }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalInitial, setModalInitial] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
+  const [cobrandoTurno, setCobrandoTurno] = useState(null);
 
   async function cargarProfesionales(f) {
     if (!empresaSlug) return;
@@ -100,16 +102,9 @@ export default function AgendaBuilder({ empresaSlug }) {
     window.open(url, '_blank');
   }
 
-  async function cobrarMP(turno) {
+  function abrirCobro(turno) {
     if (!turno.id) return;
-    try {
-      const res = await fetch(`/api/turnos/${turno.id}/cobrar-mp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      window.open(data.link, '_blank');
-    } catch (err) {
-      alert(err.message);
-    }
+    setCobrandoTurno(turno);
   }
 
   function compartirLinkReserva() {
@@ -238,7 +233,7 @@ export default function AgendaBuilder({ empresaSlug }) {
       {vista === 'lista' && (
         <AgendaLista
           fecha={fecha} setFecha={setFecha} turnos={turnos} loading={loading} errorMsg={errorMsg}
-          onCambiarEstado={cambiarEstado} onAbrirRecordatorio={abrirRecordatorio} onCobrarMP={cobrarMP}
+          onCambiarEstado={cambiarEstado} onAbrirRecordatorio={abrirRecordatorio} onCobrarMP={abrirCobro}
         />
       )}
 
@@ -294,7 +289,7 @@ export default function AgendaBuilder({ empresaSlug }) {
                               {turno.id && turno.status !== 'cancelled' && (
                                 <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
-                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cobrarMP(turno)}>Cobrar MP</button>
+                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirCobro(turno)}>Cobrar</button>
                                   {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => setConfirmando({
                                     mensaje: '¿Cancelar este turno?', destructivo: true, textoConfirmar: 'Cancelar turno',
@@ -335,6 +330,7 @@ export default function AgendaBuilder({ empresaSlug }) {
         empresaSlug={empresaSlug}
       />
       <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
+      <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={() => cargarTurnos(fecha)} />
     </>
   );
 }

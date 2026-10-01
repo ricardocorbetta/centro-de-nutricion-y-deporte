@@ -35,7 +35,7 @@ export async function POST(request) {
     if (yaExiste) return NextResponse.json({ ok: true });
 
     const ref = String(pago.external_reference || '');
-    const m = ref.match(/^turno:(\d+):tipo:(senia|completo)$/);
+    const m = ref.match(/^turno:(\d+):tipo:(senia|completo|saldo)$/);
     if (!m) return NextResponse.json({ ok: true });
     const turnoId = m[1];
     const tipoPago = m[2];
@@ -57,12 +57,14 @@ export async function POST(request) {
       fecha: new Date().toISOString().slice(0, 10),
       paciente_nombre: turno.paciente_nombre, paciente_telefono: turno.paciente_telefono,
       profesional: turno.resource,
-      servicio: (tipoPago === 'senia' ? 'Seña — ' : '') + (turno.service || ''),
+      servicio: (tipoPago === 'senia' ? 'Seña — ' : tipoPago === 'saldo' ? 'Saldo — ' : '') + (turno.service || ''),
       monto: pago.transaction_amount,
       medio_pago: 'MercadoPago',
       comision_pct: pct,
       registrado_por: 'mercadopago (automático)',
-      mp_payment_id: String(pago.id)
+      mp_payment_id: String(pago.id),
+      turno_id: turnoId,
+      tipo_cobro: tipoPago === 'senia' ? 'anticipo' : tipoPago === 'saldo' ? 'saldo' : 'completo'
     });
 
     await sb.from('turnos_propios').update({
