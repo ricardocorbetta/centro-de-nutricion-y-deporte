@@ -12,6 +12,7 @@ const MEDIOS_PAGO = ['Efectivo', 'Transferencia', 'Débito', 'Crédito', 'Mercad
 
 export default function SecretariaView({ name, username, empresa }) {
   const router = useRouter();
+  const [tab, setTab] = useState('agenda');
 
   const [cobros, setCobros] = useState([]);
   const [form, setForm] = useState({
@@ -124,64 +125,75 @@ export default function SecretariaView({ name, username, empresa }) {
         </div>
       </div>
 
+      <div className="mobile-tabs" style={{ display: 'flex' }}>
+        <button className={tab === 'agenda' ? 'active' : ''} onClick={() => setTab('agenda')}>Agenda</button>
+        <button className={tab === 'caja' ? 'active' : ''} onClick={() => setTab('caja')}>Caja del día</button>
+      </div>
+
       <div className="wrap">
-        <section><div className="card">
-          <AgendaBuilder empresaSlug={empresa?.slug} />
-        </div></section>
+        {tab === 'agenda' && (
+          <section><div className="card">
+            <AgendaBuilder empresaSlug={empresa?.slug} />
+          </div></section>
+        )}
 
-        <section><div className="card">
-          <div className="section-head"><span className="dot" /><h2>Cargar cobro</h2></div>
-          <form onSubmit={submitCobro} className="manual-grid">
-            <div className="field"><label>Fecha</label><input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} /></div>
-            <div className="field"><label>Profesional</label>
-              <input list="profesionales-list" value={form.profesional} onChange={e => setForm(f => ({ ...f, profesional: e.target.value }))} />
-              <datalist id="profesionales-list">{profesionales.map(p => <option key={p} value={p} />)}</datalist>
-            </div>
-            <div className="field"><label>Servicio</label><input value={form.servicio} onChange={e => setForm(f => ({ ...f, servicio: e.target.value }))} /></div>
-            <div className="field"><label>Monto</label><input type="number" value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))} /></div>
-            <div className="field"><label>Medio de pago</label>
-              <select value={form.medioPago} onChange={e => setForm(f => ({ ...f, medioPago: e.target.value }))}>
-                {MEDIOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="field"><label>Paciente (opcional)</label><input value={form.pacienteNombre} onChange={e => setForm(f => ({ ...f, pacienteNombre: e.target.value }))} /></div>
-            <div className="field"><label>Teléfono (opcional)</label><input value={form.pacienteTelefono} onChange={e => setForm(f => ({ ...f, pacienteTelefono: e.target.value }))} /></div>
-          </form>
-          <button className="icon-btn primary" onClick={submitCobro} style={{ marginTop: 4 }}>Guardar cobro</button>
-          {formStatus.msg && <div style={{ marginTop: 10 }}><span className={'status-msg' + (formStatus.err ? ' err' : '')}>{formStatus.msg}</span></div>}
-        </div></section>
+        {tab === 'caja' && (
+          <>
+            <section><div className="card">
+              <div className="section-head"><span className="dot" /><h2>Cargar cobro</h2></div>
+              <form onSubmit={submitCobro} className="manual-grid">
+                <div className="field"><label>Fecha</label><input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} /></div>
+                <div className="field"><label>Profesional</label>
+                  <input list="profesionales-list" value={form.profesional} onChange={e => setForm(f => ({ ...f, profesional: e.target.value }))} />
+                  <datalist id="profesionales-list">{profesionales.map(p => <option key={p} value={p} />)}</datalist>
+                </div>
+                <div className="field"><label>Servicio</label><input value={form.servicio} onChange={e => setForm(f => ({ ...f, servicio: e.target.value }))} /></div>
+                <div className="field"><label>Monto</label><input type="number" value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))} /></div>
+                <div className="field"><label>Medio de pago</label>
+                  <select value={form.medioPago} onChange={e => setForm(f => ({ ...f, medioPago: e.target.value }))}>
+                    {MEDIOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="field"><label>Paciente (opcional)</label><input value={form.pacienteNombre} onChange={e => setForm(f => ({ ...f, pacienteNombre: e.target.value }))} /></div>
+                <div className="field"><label>Teléfono (opcional)</label><input value={form.pacienteTelefono} onChange={e => setForm(f => ({ ...f, pacienteTelefono: e.target.value }))} /></div>
+              </form>
+              <button className="icon-btn primary" onClick={submitCobro} style={{ marginTop: 4 }}>Guardar cobro</button>
+              {formStatus.msg && <div style={{ marginTop: 10 }}><span className={'status-msg' + (formStatus.err ? ' err' : '')}>{formStatus.msg}</span></div>}
+            </div></section>
 
-        <section><div className="card">
-          <div className="section-head"><span className="dot" /><h2>Cobros de hoy</h2></div>
-          <table className="plain">
-            <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Monto</th><th>Medio</th><th></th></tr></thead>
-            <tbody>
-              {cobros.map(c => (
-                <tr key={c.id}>
-                  <td>{new Date(c.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</td>
-                  <td>{c.paciente_nombre || '-'}</td>
-                  <td>{c.profesional}</td>
-                  <td>{fmtMoney(c.monto)}</td>
-                  <td>{c.medio_pago}</td>
-                  <td><button className="icon-btn" onClick={() => imprimirRecibo(c)}>Recibo</button></td>
-                </tr>
-              ))}
-              {!cobros.length && <tr><td colSpan={6} style={{ color: 'var(--ink-faint)' }}>Todavía no cargaste cobros hoy.</td></tr>}
-            </tbody>
-          </table>
-        </div></section>
+            <section><div className="card">
+              <div className="section-head"><span className="dot" /><h2>Cobros de hoy</h2></div>
+              <table className="plain">
+                <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Monto</th><th>Medio</th><th></th></tr></thead>
+                <tbody>
+                  {cobros.map(c => (
+                    <tr key={c.id}>
+                      <td>{new Date(c.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</td>
+                      <td>{c.paciente_nombre || '-'}</td>
+                      <td>{c.profesional}</td>
+                      <td>{fmtMoney(c.monto)}</td>
+                      <td>{c.medio_pago}</td>
+                      <td><button className="icon-btn" onClick={() => imprimirRecibo(c)}>Recibo</button></td>
+                    </tr>
+                  ))}
+                  {!cobros.length && <tr><td colSpan={6} style={{ color: 'var(--ink-faint)' }}>Todavía no cargaste cobros hoy.</td></tr>}
+                </tbody>
+              </table>
+            </div></section>
 
-        <section><div className="card">
-          <div className="section-head"><span className="dot" /><h2>Cierre del día</h2></div>
-          {resumenHoy ? (
-            <>
-              <div className="kpi-grid" style={{ marginBottom: 18 }}>
-                <div className="kpi"><div className="label">Total cobrado</div><div className="value">{fmtMoney(resumenHoy.totalCobrado)}</div><div className="foot">{resumenHoy.cantidadCobros} cobros</div></div>
-              </div>
-              <MensajeCierre resumen={resumenHoy} fecha={todayISO()} />
-            </>
-          ) : <p style={{ color: 'var(--ink-faint)' }}>Sin datos todavía.</p>}
-        </div></section>
+            <section><div className="card">
+              <div className="section-head"><span className="dot" /><h2>Cierre del día</h2></div>
+              {resumenHoy ? (
+                <>
+                  <div className="kpi-grid" style={{ marginBottom: 18 }}>
+                    <div className="kpi"><div className="label">Total cobrado</div><div className="value">{fmtMoney(resumenHoy.totalCobrado)}</div><div className="foot">{resumenHoy.cantidadCobros} cobros</div></div>
+                  </div>
+                  <MensajeCierre resumen={resumenHoy} fecha={todayISO()} />
+                </>
+              ) : <p style={{ color: 'var(--ink-faint)' }}>Sin datos todavía.</p>}
+            </div></section>
+          </>
+        )}
 
         <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
       </div>

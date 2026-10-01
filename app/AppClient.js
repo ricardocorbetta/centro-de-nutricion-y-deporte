@@ -235,19 +235,6 @@ function DirectorApp({ name, username, empresa }) {
   );
 }
 
-const SECTIONS = [
-  { id: 'agenda-director', label: 'Agenda' },
-  { id: 'resumen', label: 'Resumen' },
-  { id: 'capacidad', label: 'Capacidad y objetivo' },
-  { id: 'equipo', label: 'Profesionales' },
-  { id: 'objetivos-equipo', label: 'Objetivos por profesional' },
-  { id: 'horarios', label: 'Horarios' },
-  { id: 'pacientes', label: 'Pacientes' },
-  { id: 'simulador', label: 'Simulador' },
-  { id: 'tendencia', label: 'Tendencia' },
-  { id: 'oportunidad', label: 'Oportunidad' },
-];
-
 function Dashboard({
   config, periods, currentMonth, setCurrentMonth, stats, trendStats, goals, saveGoal, saveProfessionalTargets,
   showConfig, setShowConfig, showUpload, setShowUpload, uploadTab, setUploadTab,
@@ -255,6 +242,23 @@ function Dashboard({
   fileEventsRef, fileConsumersRef, onUploadCSV, onManualSave, uploadStatus,
   name, username, onLogout, empresa
 }) {
+  const [activeSection, setActiveSection] = useState('agenda-director');
+
+  const NAV = [
+    { id: 'agenda-director', label: 'Agenda' },
+    { id: 'resumen', label: 'Resumen' },
+    { id: 'equipo', label: 'Equipo y horarios' },
+    { id: 'pacientes', label: 'Pacientes' },
+    { id: 'simulador', label: 'Simulador' },
+    ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia' }] : []),
+    { id: 'oportunidad', label: 'Oportunidad' },
+    { id: 'caja', label: 'Caja y comisiones' },
+    { id: 'profesionales-admin', label: 'Profesionales' },
+    { id: 'google-calendar', label: 'Google Calendar' },
+  ];
+
+  const necesitaStats = ['resumen', 'equipo', 'pacientes', 'simulador', 'oportunidad'].includes(activeSection);
+
   return (
     <>
       <div className="topbar">
@@ -277,73 +281,105 @@ function Dashboard({
         </div>
       </div>
 
-      <nav className="section-nav">
-        {SECTIONS.map(s => <a key={s.id} href={'#' + s.id}>{s.label}</a>)}
-        <a href="#caja">Caja y comisiones</a>
-        <a href="#profesionales-admin">Profesionales (horarios)</a>
-        <a href="#google-calendar">Google Calendar</a>
-      </nav>
+      <div className="mobile-tabs">
+        {NAV.map(n => (
+          <button key={n.id} className={activeSection === n.id ? 'active' : ''} onClick={() => setActiveSection(n.id)}>{n.label}</button>
+        ))}
+      </div>
 
-      <div className="wrap">
-        <section id="agenda-director"><div className="card">
-          <AgendaBuilder empresaSlug={empresa?.slug} />
-        </div></section>
+      <div className="app-shell">
+        <aside className="sidebar">
+          {NAV.map(n => (
+            <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)}>
+              {n.label}
+            </button>
+          ))}
+        </aside>
 
-        {showConfig && (
-          <section className="card">
-            <ConfigPanel config={config} onConsultoriosChange={onConsultoriosChange}
-              onHorasChange={onHorasChange} onPrecioChange={onPrecioChange} />
-          </section>
-        )}
+        <main className="wrap" style={{ flex: 1, minWidth: 0 }}>
+          {showConfig && (
+            <section className="card">
+              <ConfigPanel config={config} onConsultoriosChange={onConsultoriosChange}
+                onHorasChange={onHorasChange} onPrecioChange={onPrecioChange} />
+            </section>
+          )}
 
-        {showUpload && (
-          <section className="card">
-            <UploadPanel uploadTab={uploadTab} setUploadTab={setUploadTab}
-              fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
-              onUploadCSV={onUploadCSV} onManualSave={onManualSave} uploadStatus={uploadStatus} />
-          </section>
-        )}
+          {showUpload && (
+            <section className="card">
+              <UploadPanel uploadTab={uploadTab} setUploadTab={setUploadTab}
+                fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
+                onUploadCSV={onUploadCSV} onManualSave={onManualSave} uploadStatus={uploadStatus} />
+            </section>
+          )}
 
-        {!stats ? (
-          <div style={{ padding: '40px 0', fontFamily: 'var(--mono)' }}>Cargando datos del período…</div>
-        ) : (
-          <>
-            <section id="resumen"><div className="card"><KPISection stats={stats} /></div></section>
-            <section id="capacidad"><div className="card">
-              <CapacitySection stats={stats} goal={goals[currentMonth]} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
-            </div></section>
-            {!stats.isManual && (
-              <section id="equipo"><div className="card"><ResourceServiceSection stats={stats} /></div></section>
-            )}
-            {!stats.isManual && (
-              <section id="objetivos-equipo"><div className="card">
-                <ObjetivosEquipoSection stats={stats} goal={goals[currentMonth]}
-                  onSave={(profTargets) => saveProfessionalTargets(currentMonth, profTargets)} />
-              </div></section>
-            )}
-            {!stats.isManual && (
-              <section id="horarios"><div className="card"><HeatmapSection stats={stats} /></div></section>
-            )}
-            <section id="pacientes"><div className="card"><StatusPatientsSection stats={stats} /></div></section>
-            <section id="simulador"><div className="card">
-              <SimulatorSection stats={stats} config={config} currentMonth={currentMonth} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
-            </div></section>
-            {periods.length >= 2 && (
-              <section id="tendencia"><div className="card"><TrendSection periods={periods} trendStats={trendStats} /></div></section>
-            )}
-            {!stats.isManual && (
-              <section id="oportunidad"><div className="card"><RecoSection stats={stats} /></div></section>
-            )}
-          </>
-        )}
+          {activeSection === 'agenda-director' && (
+            <section><div className="card"><AgendaBuilder empresaSlug={empresa?.slug} /></div></section>
+          )}
 
-        <section id="caja"><div className="card"><CajaComisionesSection /></div></section>
+          {necesitaStats && !stats ? (
+            <div style={{ padding: '40px 0', fontFamily: 'var(--mono)' }}>Cargando datos del período…</div>
+          ) : (
+            <>
+              {activeSection === 'resumen' && stats && (
+                <>
+                  <section><div className="card"><KPISection stats={stats} /></div></section>
+                  <section><div className="card">
+                    <CapacitySection stats={stats} goal={goals[currentMonth]} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
+                  </div></section>
+                </>
+              )}
 
-        <section id="profesionales-admin"><div className="card"><ProfesionalesAdmin /></div></section>
+              {activeSection === 'equipo' && stats && !stats.isManual && (
+                <>
+                  <section><div className="card"><ResourceServiceSection stats={stats} /></div></section>
+                  <section><div className="card">
+                    <ObjetivosEquipoSection stats={stats} goal={goals[currentMonth]}
+                      onSave={(profTargets) => saveProfessionalTargets(currentMonth, profTargets)} />
+                  </div></section>
+                  <section><div className="card"><HeatmapSection stats={stats} /></div></section>
+                </>
+              )}
+              {activeSection === 'equipo' && stats?.isManual && (
+                <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no tiene desglose por profesional.</p>
+              )}
 
-        <section id="google-calendar"><div className="card"><GoogleCalendarConfig /></div></section>
+              {activeSection === 'pacientes' && stats && (
+                <section><div className="card"><StatusPatientsSection stats={stats} /></div></section>
+              )}
 
-        <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
+              {activeSection === 'simulador' && stats && (
+                <section><div className="card">
+                  <SimulatorSection stats={stats} config={config} currentMonth={currentMonth} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
+                </div></section>
+              )}
+
+              {activeSection === 'oportunidad' && stats && !stats.isManual && (
+                <section><div className="card"><RecoSection stats={stats} /></div></section>
+              )}
+              {activeSection === 'oportunidad' && stats?.isManual && (
+                <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no hay datos suficientes para recomendaciones.</p>
+              )}
+            </>
+          )}
+
+          {activeSection === 'tendencia' && periods.length >= 2 && (
+            <section><div className="card"><TrendSection periods={periods} trendStats={trendStats} /></div></section>
+          )}
+
+          {activeSection === 'caja' && (
+            <section><div className="card"><CajaComisionesSection /></div></section>
+          )}
+
+          {activeSection === 'profesionales-admin' && (
+            <section><div className="card"><ProfesionalesAdmin /></div></section>
+          )}
+
+          {activeSection === 'google-calendar' && (
+            <section><div className="card"><GoogleCalendarConfig /></div></section>
+          )}
+
+          <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
+        </main>
       </div>
     </>
   );
