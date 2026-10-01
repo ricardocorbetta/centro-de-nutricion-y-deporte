@@ -27,6 +27,7 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
   const [medioPago, setMedioPago] = useState('Efectivo');
   const [comprobante, setComprobante] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [avisoAtendido, setAvisoAtendido] = useState(false);
 
   async function cargar() {
     setLoading(true);
@@ -78,7 +79,16 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setComprobante(null);
-      await cargar();
+
+      // Si con este cobro se terminó de pagar todo, marcamos el turno como atendido automáticamente
+      // (solo si todavía estaba "booked" — no pisa un "cancelled" ni nada ya marcado a mano).
+      const estadoNuevo = await fetch(`/api/turnos/${turno.id}/cobros`).then(r => r.json());
+      if (estadoNuevo.saldoPendiente === 0 && estadoNuevo.precioTotal !== null && turno.status === 'booked') {
+        await fetch(`/api/turnos/${turno.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cumplido' }) });
+        turno.status = 'cumplido';
+        setAvisoAtendido(true);
+      }
+      setEstado(estadoNuevo);
       onChanged?.();
     } catch (err) {
       setErrorMsg(err.message);
@@ -126,6 +136,7 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
               <div className="empty-state" style={{ marginBottom: 10 }}>
                 <span className="icon">✅</span>
                 <span className="title">Ya está todo cobrado</span>
+                {avisoAtendido && <span className="hint">Se marcó el turno como Atendido automáticamente.</span>}
               </div>
             ) : (
               <>

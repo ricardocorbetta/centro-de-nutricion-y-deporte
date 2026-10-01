@@ -18,6 +18,7 @@ import GoogleCalendarConfig from './GoogleCalendarConfig';
 import MercadoPagoConfig from './MercadoPagoConfig';
 import PacientesPanel from './PacientesPanel';
 import BibliotecaAdmin from './BibliotecaAdmin';
+import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
@@ -262,6 +263,7 @@ function Dashboard({
       { id: 'agenda-director', label: 'Agenda' },
       { id: 'pacientes', label: 'Pacientes' },
       { id: 'biblioteca', label: 'Biblioteca' },
+      { id: 'cartelera', label: 'Cartelera pública' },
       { id: 'caja', label: 'Caja y comisiones' },
     ]},
     { label: 'Reportes', items: [
@@ -351,6 +353,10 @@ function Dashboard({
 
           {activeSection === 'biblioteca' && (
             <section><div className="card"><BibliotecaAdmin empresaSlug={empresa?.slug} /></div></section>
+          )}
+
+          {activeSection === 'cartelera' && (
+            <section><div className="card"><CarteleraAdmin empresaSlug={empresa?.slug} /></div></section>
           )}
 
           {necesitaStats && !stats ? (

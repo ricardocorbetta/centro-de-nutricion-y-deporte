@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { obtenerPago } from '../../../../../lib/mercadoPago';
+import { estadoPagoTurno } from '../../../../../lib/cobrosTurno';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,10 +68,17 @@ export async function POST(request) {
       tipo_cobro: tipoPago === 'senia' ? 'anticipo' : tipoPago === 'saldo' ? 'saldo' : 'completo'
     });
 
-    await sb.from('turnos_propios').update({
+    const patch = {
       mp_payment_status: tipoPago === 'senia' ? 'senia_pagada' : 'pagado',
       mp_payment_id: String(pago.id)
-    }).eq('id', turnoId);
+    };
+    // Si con este pago se terminó de cubrir el precio total, marcamos el turno como atendido
+    // automáticamente (solo si seguía "booked" — no pisa un turno ya cancelado o ya marcado a mano).
+    if (turno.status === 'booked') {
+      const estado = await estadoPagoTurno(sb, empresaId, turnoId);
+      if (estado.saldoPendiente === 0 && estado.precioTotal !== null) patch.status = 'cumplido';
+    }
+    await sb.from('turnos_propios').update(patch).eq('id', turnoId);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
