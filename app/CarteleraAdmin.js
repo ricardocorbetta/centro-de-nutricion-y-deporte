@@ -23,6 +23,7 @@ export default function CarteleraAdmin({ empresaSlug }) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [creando, setCreando] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
 
   async function cargar() {
@@ -98,6 +99,7 @@ export default function CarteleraAdmin({ empresaSlug }) {
                 <td style={{ fontWeight: 600 }}>{c.titulo}{c.destacar ? ' ⭐' : ''}</td>
                 <td><button className="icon-btn" onClick={() => toggleDestacar(c)}>{c.destacar ? 'Quitar destacado' : 'Destacar'}</button></td>
                 <td style={{ display: 'flex', gap: 6 }}>
+                  <button className="icon-btn" onClick={() => setEditando(c)}>Editar</button>
                   <button className="icon-btn" onClick={() => toggleActivo(c)}>{c.activo ? 'Ocultar' : 'Publicar'}</button>
                   <button className="icon-btn" onClick={() => borrar(c)}>Borrar</button>
                 </td>
@@ -117,17 +119,19 @@ export default function CarteleraAdmin({ empresaSlug }) {
       )}
 
       {creando && <PublicarModal onClose={() => setCreando(false)} onCreated={() => { setCreando(false); cargar(); }} />}
+      {editando && <PublicarModal item={editando} onClose={() => setEditando(null)} onCreated={() => { setEditando(null); cargar(); }} />}
       <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </>
   );
 }
 
-function PublicarModal({ onClose, onCreated }) {
-  const [tipo, setTipo] = useState('comunidad');
-  const [titulo, setTitulo] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [fecha, setFecha] = useState(todayISO());
-  const [destacar, setDestacar] = useState(false);
+function PublicarModal({ item, onClose, onCreated }) {
+  const editando = !!item;
+  const [tipo, setTipo] = useState(item?.tipo || 'comunidad');
+  const [titulo, setTitulo] = useState(item?.titulo || '');
+  const [descripcion, setDescripcion] = useState(item?.descripcion || '');
+  const [fecha, setFecha] = useState(item?.fecha || todayISO());
+  const [destacar, setDestacar] = useState(item?.destacar || false);
   const [image, setImage] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -144,7 +148,9 @@ function PublicarModal({ onClose, onCreated }) {
       form.append('fecha', fecha);
       form.append('destacar', String(destacar));
       if (image) form.append('image', image);
-      const res = await fetch('/api/cartelera', { method: 'POST', body: form });
+      const res = await fetch(editando ? `/api/cartelera/${item.id}` : '/api/cartelera', {
+        method: editando ? 'PATCH' : 'POST', body: form
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       onCreated();
@@ -158,7 +164,7 @@ function PublicarModal({ onClose, onCreated }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
       <div className="card" style={{ width: 460, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>Publicar en la cartelera</h2></div>
+        <div className="section-head"><span className="dot" /><h2>{editando ? 'Editar publicación' : 'Publicar en la cartelera'}</h2></div>
 
         <div className="manual-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 12 }}>
           <div className="field"><label>Tipo</label>
@@ -175,7 +181,7 @@ function PublicarModal({ onClose, onCreated }) {
           <div className="field" style={{ gridColumn: '1 / -1' }}><label>Descripción (opcional)</label>
             <input value={descripcion} onChange={e => setDescripcion(e.target.value)} />
           </div>
-          <div className="field" style={{ gridColumn: '1 / -1' }}><label>Imagen / flyer (opcional)</label>
+          <div className="field" style={{ gridColumn: '1 / -1' }}><label>{editando ? 'Reemplazar imagen / flyer (opcional)' : 'Imagen / flyer (opcional)'}</label>
             <input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] || null)} />
           </div>
           <div className="field" style={{ gridColumn: '1 / -1' }}>
@@ -187,7 +193,7 @@ function PublicarModal({ onClose, onCreated }) {
 
         {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Publicando…' : 'Publicar'}</button>
+          <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : (editando ? 'Guardar cambios' : 'Publicar')}</button>
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
         </div>
       </div>

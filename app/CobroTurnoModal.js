@@ -80,14 +80,13 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
       if (data.error) throw new Error(data.error);
       setComprobante(null);
 
-      // Si con este cobro se terminó de pagar todo, marcamos el turno como atendido automáticamente
-      // (solo si todavía estaba "booked" — no pisa un "cancelled" ni nada ya marcado a mano).
-      const estadoNuevo = await fetch(`/api/turnos/${turno.id}/cobros`).then(r => r.json());
-      if (estadoNuevo.saldoPendiente === 0 && estadoNuevo.precioTotal !== null && turno.status === 'booked') {
-        await fetch(`/api/turnos/${turno.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cumplido' }) });
+      // El auto-marcado como "Atendido" (si el cobro completó el saldo) ya lo hace el servidor;
+      // solo reflejamos el resultado acá.
+      if (data.marcadoAtendido) {
         turno.status = 'cumplido';
         setAvisoAtendido(true);
       }
+      const estadoNuevo = await fetch(`/api/turnos/${turno.id}/cobros`).then(r => r.json());
       setEstado(estadoNuevo);
       onChanged?.();
     } catch (err) {

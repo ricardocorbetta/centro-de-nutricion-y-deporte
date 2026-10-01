@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
 import LoadingSkeleton from './LoadingSkeleton';
+import CobroTurnoModal from './CobroTurnoModal';
 
 const DOW_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -26,6 +27,7 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
   const [turnos, setTurnos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [cobrandoTurno, setCobrandoTurno] = useState(null);
 
   const monday = useMemo(() => mondayOf(anchor), [anchor]);
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(monday, i)), [monday]);
@@ -131,6 +133,9 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
                         {ESTADO_LABEL[t.status] || t.status}
                       </span>
                     )}
+                    {t.id && t.status !== 'cancelled' && (
+                      <button className="icon-btn primary" style={{ padding: '1px 5px', fontSize: 10 }} onClick={() => setCobrandoTurno(t)}>Cobrar</button>
+                    )}
                     {t.id && (
                       <button className="icon-btn" style={{ padding: '1px 5px', fontSize: 10 }} onClick={() => abrirRecordatorio(t)}>WA</button>
                     )}
@@ -142,6 +147,8 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
           );
         })}
       </div>
+
+      <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={cargar} />
     </>
   );
 }

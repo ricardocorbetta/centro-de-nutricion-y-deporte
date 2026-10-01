@@ -5,6 +5,7 @@ import { fmtMoney } from '../lib/stats';
 import { ESTADO_LABEL } from '../lib/agendaEstados';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
+import CobroTurnoModal from './CobroTurnoModal';
 
 const TIPO_ARCHIVO = [
   { value: 'plan', label: 'Plan alimentario' },
@@ -229,6 +230,7 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [editando, setEditando] = useState(false);
+  const [cobrandoTurno, setCobrandoTurno] = useState(null);
 
   async function cargar() {
     setLoading(true);
@@ -293,17 +295,27 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
 
             <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Turnos</h2></div>
             <table className="plain" style={{ marginBottom: 18 }}>
-              <thead><tr><th>Fecha</th><th>Profesional</th><th>Servicio</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Profesional</th><th>Servicio</th><th>Estado</th><th>Saldo</th><th></th></tr></thead>
               <tbody>
-                {data.turnos.map(t => (
-                  <tr key={t.id}>
-                    <td style={{ fontFamily: 'var(--mono)' }}>{t.day} {t.time}</td>
-                    <td>{t.resource}</td>
-                    <td>{t.service}</td>
-                    <td>{ESTADO_LABEL[t.status] || t.status}</td>
-                  </tr>
-                ))}
-                {!data.turnos.length && <tr><td colSpan={4} style={{ color: 'var(--ink-faint)' }}>Sin turnos cargados desde este sistema todavía.</td></tr>}
+                {data.turnos.map(t => {
+                  const cobrado = data.cobros.filter(c => c.turno_id === t.id).reduce((acc, c) => acc + Number(c.monto || 0), 0);
+                  const saldo = t.precio_total != null ? Math.max(0, t.precio_total - cobrado) : null;
+                  return (
+                    <tr key={t.id}>
+                      <td style={{ fontFamily: 'var(--mono)' }}>{t.day} {t.time}</td>
+                      <td>{t.resource}</td>
+                      <td>{t.service}</td>
+                      <td>{ESTADO_LABEL[t.status] || t.status}</td>
+                      <td style={{ color: saldo > 0 ? 'var(--rust)' : 'var(--ink-faint)' }}>{saldo !== null ? fmtMoney(saldo) : '—'}</td>
+                      <td>
+                        {t.status !== 'cancelled' && (
+                          <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => setCobrandoTurno(t)}>Cobrar</button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!data.turnos.length && <tr><td colSpan={6} style={{ color: 'var(--ink-faint)' }}>Sin turnos cargados desde este sistema todavía.</td></tr>}
               </tbody>
             </table>
 
@@ -330,6 +342,8 @@ function FichaPacienteModal({ id, empresaSlug, onClose, onUpdated }) {
             <div style={{ marginTop: 16 }}>
               <button className="icon-btn" onClick={onClose}>Cerrar</button>
             </div>
+
+            <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={cargar} />
           </>
         )}
       </div>

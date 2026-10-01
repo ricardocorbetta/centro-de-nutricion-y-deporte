@@ -77,7 +77,19 @@ export async function POST(request, { params }) {
     }).select().single();
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, cobro: row });
+    // Si con este cobro se terminó de pagar todo, marcamos el turno como atendido automáticamente
+    // (hecho acá en el servidor, no solo en el cliente, para que valga para cualquier llamador de
+    // este endpoint — solo si todavía estaba "booked", nunca pisa un "cancelled" ni algo ya manual).
+    let marcadoAtendido = false;
+    if (turno.status === 'booked') {
+      const estadoNuevo = await estadoPagoTurno(sb, session.empresaId, id);
+      if (estadoNuevo.saldoPendiente === 0 && estadoNuevo.precioTotal !== null) {
+        await sb.from('turnos_propios').update({ status: 'cumplido' }).eq('id', id).eq('empresa_id', session.empresaId);
+        marcadoAtendido = true;
+      }
+    }
+
+    return NextResponse.json({ ok: true, cobro: row, marcadoAtendido });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
