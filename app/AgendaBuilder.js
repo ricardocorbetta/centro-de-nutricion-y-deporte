@@ -198,7 +198,7 @@ export default function AgendaBuilder({ empresaSlug }) {
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setCompartirMenuOpen(false)} />
                 <div style={{
-                  position: 'absolute', top: '110%', left: 0, zIndex: 41, background: '#fff',
+                  position: 'absolute', top: '110%', left: 0, zIndex: 41, background: 'var(--surface)',
                   border: '1px solid var(--border-strong)', borderRadius: 10, boxShadow: '0 12px 28px -16px rgba(21,39,42,.25)',
                   minWidth: 240, overflow: 'hidden'
                 }}>
@@ -221,7 +221,7 @@ export default function AgendaBuilder({ empresaSlug }) {
             <>
               <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setQuickMenuOpen(false)} />
               <div style={{
-                position: 'absolute', top: '110%', right: 0, zIndex: 41, background: '#fff',
+                position: 'absolute', top: '110%', right: 0, zIndex: 41, background: 'var(--surface)',
                 border: '1px solid var(--border-strong)', borderRadius: 10, boxShadow: '0 12px 28px -16px rgba(21,39,42,.25)',
                 minWidth: 200, overflow: 'hidden'
               }}>

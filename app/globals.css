@@ -29,6 +29,7 @@
   --sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --mono:'IBM Plex Mono', monospace;
 
+  --input-bg:var(--surface-alt);
   --ease:cubic-bezier(.2,.7,.3,1);
   --tap-min:44px; /* tamaño táctil mínimo recomendado (WCAG 2.5.8 / Apple HIG) */
   color-scheme:light;
@@ -42,8 +43,9 @@
     --bg:#0F1A1B;
     --surface:#162326;
     --surface-alt:#1D2D2F;
-    --border:#243638;
-    --border-strong:#304547;
+    --border:#2B3F41;
+    --border-strong:#446164;
+    --input-bg:#1F3134;
     --ink:#EAF2F0;
     --ink-soft:#A9BDBB;
     --ink-faint:#718586;
@@ -277,9 +279,9 @@ table.plain input[type=number], table.plain input[type=text]{width:90px;}
 .tag.gold{background:var(--accent-soft); color:#8A6A34;}
 
 input[type=number], input[type=text], input[type=date], input[type=email], input[type=month],
-input[type=password], select, textarea{
+input[type=password], input[type=time], select, textarea{
   font-family:var(--sans); font-size:13.5px;
-  background:var(--surface-alt); border:1px solid var(--border-strong);
+  background:var(--input-bg); border:1.5px solid var(--border-strong);
   border-radius:var(--radius-sm); padding:9px 11px; color:var(--ink);
   min-height:40px; transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
 }
@@ -287,6 +289,7 @@ textarea{min-height:unset; line-height:1.5;}
 input[type=file]{font-size:12.5px; font-family:var(--sans);}
 input:focus, select:focus, textarea:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft);}
 input::placeholder, textarea::placeholder{color:var(--ink-faint);}
+input[type=checkbox], input[type=radio]{accent-color:var(--primary); min-height:unset; width:16px; height:16px;}
 
 /* ---------- Recommendations ---------- */
 .reco-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:14px;}

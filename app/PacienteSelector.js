@@ -91,7 +91,7 @@ export default function PacienteSelector({ value, onChange }) {
       {abierto && query.trim() && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30, marginTop: 4,
-          background: '#fff', border: '1px solid var(--border-strong)', borderRadius: 10,
+          background: 'var(--surface)', border: '1px solid var(--border-strong)', borderRadius: 10,
           boxShadow: '0 12px 28px -16px rgba(21,39,42,.25)', maxHeight: 260, overflowY: 'auto'
         }}>
           {buscando && <div style={{ padding: 10, fontSize: 12, color: 'var(--ink-faint)' }}>Buscando…</div>}

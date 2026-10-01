@@ -35,28 +35,26 @@ export default function LoginPage() {
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif"
     }}>
-      <form onSubmit={handleSubmit} style={{
-        background: '#fff', border: '1px solid #E3EAE7', borderRadius: 16,
-        padding: '36px 32px', width: 340, boxShadow: '0 12px 28px -16px rgba(21,39,42,.18)'
+      <form onSubmit={handleSubmit} className="card" style={{
+        padding: '36px 32px', width: 340, boxShadow: 'var(--shadow)'
       }}>
-        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: '#1F7A68', marginBottom: 4 }}>Xenom</div>
-        <h1 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 4px', color: '#15272A' }}>Panel de gestión</h1>
-        <p style={{ fontSize: 13, color: '#5C6E70', margin: '0 0 22px' }}>Plataforma para centros de nutrición y deporte</p>
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)', marginBottom: 4 }}>Xenom</div>
+        <h1 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 4px', color: 'var(--ink)' }}>Panel de gestión</h1>
+        <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 22px' }}>Plataforma para centros de nutrición y deporte</p>
 
-        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: '#8B9A9B', marginBottom: 6 }}>Usuario</label>
+        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 6 }}>Usuario</label>
         <input value={username} onChange={e => setUsername(e.target.value)} autoFocus
-          style={{ width: '100%', padding: '9px 12px', marginBottom: 16, background: '#EEF3F1', border: '1px solid #D3DEDA', borderRadius: 10, fontSize: 14 }} />
+          style={{ width: '100%', marginBottom: 16 }} />
 
-        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: '#8B9A9B', marginBottom: 6 }}>Contraseña</label>
+        <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-faint)', marginBottom: 6 }}>Contraseña</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px', marginBottom: 20, background: '#EEF3F1', border: '1px solid #D3DEDA', borderRadius: 10, fontSize: 14 }} />
+          style={{ width: '100%', marginBottom: 20 }} />
 
-        {error && <div style={{ color: '#C0562F', fontSize: 12.5, marginBottom: 14 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--rust)', fontSize: 12.5, marginBottom: 14 }}>{error}</div>}
 
-        <button type="submit" disabled={loading} style={{
-          width: '100%', padding: '10px 0', background: '#1F7A68', color: '#fff', border: 'none',
-          borderRadius: 999, fontWeight: 600, fontSize: 13.5, cursor: 'pointer', opacity: loading ? .7 : 1
-        }}>{loading ? 'Ingresando…' : 'Ingresar'}</button>
+        <button type="submit" className="icon-btn primary" disabled={loading} style={{ width: '100%', padding: '10px 0' }}>
+          {loading ? 'Ingresando…' : 'Ingresar'}
+        </button>
       </form>
     </div>
   );
