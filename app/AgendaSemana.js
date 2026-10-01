@@ -19,8 +19,42 @@ function mondayOf(iso) {
 function addDays(d, n) { const c = new Date(d); c.setDate(c.getDate() + n); return c; }
 function fmtDia(d) { return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }); }
 
-// Vista semanal tipo "Calendario" de drApp: 7 columnas (Lun a Dom), cada una con
-// los turnos del día ordenados por hora. Navegación semana anterior/siguiente.
+// Una tarjeta de turno, reusada tanto en la grilla de 7 columnas (desktop) como en la
+// lista de un solo día (mobile) — mismo contenido, el tamaño lo ajusta el CSS según pantalla.
+export function TurnoCard({ t, onCambiarEstado, onCobrar, onRecordatorio }) {
+  return (
+    <div className={'turno-card' + (t.status === 'cancelled' ? ' cancelado' : '')}>
+      <div className="time">{t.time}</div>
+      <div className="nombre">{t.paciente_nombre || '(sin nombre)'}</div>
+      <div className="prof">{t.resource}</div>
+      {t.id ? (
+        <div className="estado-row">
+          <select value={t.status} onChange={e => onCambiarEstado(t, e.target.value)}>
+            {ESTADOS_VALIDOS.map(e => <option key={e} value={e}>{ESTADO_LABEL[e]}</option>)}
+          </select>
+        </div>
+      ) : (
+        <div className="estado-row">
+          <span className={'tag' + (ESTADO_CLASS[t.status] ? ' ' + ESTADO_CLASS[t.status] : '')}>
+            {ESTADO_LABEL[t.status] || t.status}
+          </span>
+        </div>
+      )}
+      {t.id && (
+        <div className="acciones">
+          {t.status !== 'cancelled' && (
+            <button className="icon-btn primary" onClick={() => onCobrar(t)}>Cobrar</button>
+          )}
+          <button className="icon-btn wa" title="Recordatorio por WhatsApp" onClick={() => onRecordatorio(t)}>WA</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Vista semanal tipo "Calendario" de drApp: 7 columnas (Lun a Dom) en desktop; en pantallas
+// chicas, en vez de apretar 7 columnas se muestra un selector de día (pills) y la lista de
+// turnos de ese día sola, a todo el ancho — igual de legible que la vista Lista.
 // Props: empresaNombre, onNuevoEnDia(fechaISO)
 export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
   const [anchor, setAnchor] = useState(todayISO());
@@ -28,11 +62,18 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [cobrandoTurno, setCobrandoTurno] = useState(null);
+  const [diaSeleccionado, setDiaSeleccionado] = useState(todayISO());
 
   const monday = useMemo(() => mondayOf(anchor), [anchor]);
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(monday, i)), [monday]);
   const desde = toISO(dias[0]);
   const hasta = toISO(dias[6]);
+
+  // Si la semana mostrada cambia, el día seleccionado (para la vista mobile) pasa a ser
+  // hoy si cae en esta semana, o si no el lunes de la semana.
+  useEffect(() => {
+    setDiaSeleccionado(prev => (prev >= desde && prev <= hasta) ? prev : desde);
+  }, [desde, hasta]);
 
   async function cargar() {
     setLoading(true);
@@ -84,6 +125,8 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
     window.open(url, '_blank');
   }
 
+  const itemsDiaSeleccionado = porDia[diaSeleccionado] || [];
+
   return (
     <>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
@@ -96,53 +139,59 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
       {loading && <LoadingSkeleton lines={1} widths={['30%']} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', gap: 10, overflowX: 'auto' }}>
+      {/* Selector de día — solo visible en pantallas chicas (ver globals.css) */}
+      <div className="semana-day-pills">
+        {dias.map(d => {
+          const iso = toISO(d);
+          return (
+            <button
+              key={iso}
+              className={(iso === diaSeleccionado ? 'active' : '') + (iso === todayISO() ? ' hoy' : '')}
+              onClick={() => setDiaSeleccionado(iso)}
+            >
+              {DOW_CORTO[d.getDay()]} {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Vista de un solo día — mobile */}
+      <div className="semana-day-mobile">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 14 }}>{fmtDia(new Date(diaSeleccionado + 'T00:00:00'))}</h3>
+          <button className="icon-btn" onClick={() => onNuevoEnDia(diaSeleccionado)}>+ Nuevo turno</button>
+        </div>
+        {itemsDiaSeleccionado.map((t, idx) => (
+          <TurnoCard key={t.id || `imp-${idx}`} t={t} onCambiarEstado={cambiarEstado} onCobrar={setCobrandoTurno} onRecordatorio={abrirRecordatorio} />
+        ))}
+        {!itemsDiaSeleccionado.length && (
+          <div className="empty-state">
+            <span className="icon">🗓️</span>
+            <span className="title">Sin turnos este día</span>
+          </div>
+        )}
+      </div>
+
+      {/* Grilla de 7 columnas — desktop */}
+      <div className="semana-grid">
         {dias.map(d => {
           const iso = toISO(d);
           const esHoy = iso === todayISO();
-          const dow = d.getDay();
           const items = porDia[iso] || [];
           return (
-            <div key={iso} style={{
-              border: '1px solid var(--border-strong)', borderRadius: 10, padding: 8,
-              background: esHoy ? 'rgba(31,122,104,0.06)' : 'transparent', minHeight: 160
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div key={iso} className={'semana-col' + (esHoy ? ' hoy' : '')}>
+              <div className="semana-col-head">
                 <div>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-soft)' }}>{DOW_CORTO[dow]}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{fmtDia(d)}</div>
+                  <div className="dow">{DOW_CORTO[d.getDay()]}</div>
+                  <div className="num">{fmtDia(d)}</div>
                 </div>
-                <button className="icon-btn" style={{ padding: '2px 7px', fontSize: 13 }} title="Nuevo turno este día" onClick={() => onNuevoEnDia(iso)}>+</button>
+                <button className="icon-btn" style={{ padding: '4px 9px', fontSize: 13, minHeight: 'unset' }} title="Nuevo turno este día" onClick={() => onNuevoEnDia(iso)}>+</button>
               </div>
 
               {items.map((t, idx) => (
-                <div key={t.id || `imp-${idx}`} style={{
-                  background: t.status === 'cancelled' ? 'var(--surface-alt)' : 'rgba(31,122,104,0.08)',
-                  border: '1px solid var(--border-strong)', borderRadius: 8, padding: '5px 7px', marginBottom: 6, fontSize: 11.5
-                }}>
-                  <div style={{ fontFamily: 'var(--mono)', fontWeight: 700 }}>{t.time}</div>
-                  <div style={{ fontWeight: 600 }}>{t.paciente_nombre || '(sin nombre)'}</div>
-                  <div style={{ color: 'var(--ink-soft)' }}>{t.resource}</div>
-                  <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                    {t.id ? (
-                      <select value={t.status} onChange={e => cambiarEstado(t, e.target.value)} style={{ fontSize: 10.5, padding: '1px 2px' }}>
-                        {ESTADOS_VALIDOS.map(e => <option key={e} value={e}>{ESTADO_LABEL[e]}</option>)}
-                      </select>
-                    ) : (
-                      <span className={'tag' + (ESTADO_CLASS[t.status] ? ' ' + ESTADO_CLASS[t.status] : '')} style={{ fontSize: 10 }}>
-                        {ESTADO_LABEL[t.status] || t.status}
-                      </span>
-                    )}
-                    {t.id && t.status !== 'cancelled' && (
-                      <button className="icon-btn primary" style={{ padding: '1px 5px', fontSize: 10 }} onClick={() => setCobrandoTurno(t)}>Cobrar</button>
-                    )}
-                    {t.id && (
-                      <button className="icon-btn" style={{ padding: '1px 5px', fontSize: 10 }} onClick={() => abrirRecordatorio(t)}>WA</button>
-                    )}
-                  </div>
-                </div>
+                <TurnoCard key={t.id || `imp-${idx}`} t={t} onCambiarEstado={cambiarEstado} onCobrar={setCobrandoTurno} onRecordatorio={abrirRecordatorio} />
               ))}
-              {!items.length && <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Sin turnos</div>}
+              {!items.length && <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>Sin turnos</div>}
             </div>
           );
         })}

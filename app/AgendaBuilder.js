@@ -287,11 +287,11 @@ export default function AgendaBuilder({ empresaSlug }) {
                                 </span>
                               </div>
                               {turno.id && turno.status !== 'cancelled' && (
-                                <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
-                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirCobro(turno)}>Cobrar</button>
-                                  {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
-                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => setConfirmando({
+                                <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                                  <button className="icon-btn primary" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => abrirCobro(turno)}>Cobrar</button>
+                                  <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
+                                  {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
+                                  <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => setConfirmando({
                                     mensaje: '¿Cancelar este turno?', destructivo: true, textoConfirmar: 'Cancelar turno',
                                     onConfirm: () => cambiarEstado(turno, 'cancelled')
                                   })}>Cancelar</button>

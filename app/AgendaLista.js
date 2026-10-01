@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADO_TABS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
+import { TurnoCard } from './AgendaSemana';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 function addDaysISO(iso, delta) {
@@ -51,7 +52,21 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
 
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
 
-      <table className="plain" style={{ marginTop: 10 }}>
+      {/* Mobile: tarjetas en vez de tabla (ver globals.css) */}
+      <div className="lista-cards-mobile">
+        {filtrados.map((t, idx) => (
+          <TurnoCard key={t.id || `imp-${idx}`} t={t} onCambiarEstado={onCambiarEstado} onCobrar={onCobrarMP || (() => {})} onRecordatorio={onAbrirRecordatorio} />
+        ))}
+        {!filtrados.length && !loading && (
+          <div className="empty-state">
+            <span className="icon">📅</span>
+            <span className="title">Sin turnos en esta categoría</span>
+            <span className="hint">No hay turnos para el día elegido con este filtro. Probá otra fecha o tocá &quot;+ Nuevo&quot; para cargar uno.</span>
+          </div>
+        )}
+      </div>
+
+      <table className="plain lista-table-desktop" style={{ marginTop: 10 }}>
         <thead>
           <tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Servicio</th><th>Modalidad</th><th>Estado</th><th></th></tr>
         </thead>
