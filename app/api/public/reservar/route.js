@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { overlapsAny } from '../../../../lib/scheduling';
 import { resolverEmpresaPorSlug } from '../../../../lib/empresas';
 import { crearEventoCalendario } from '../../../../lib/googleCalendar';
+import { crearPreferencia } from '../../../../lib/mercadoPago';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,27 @@ export async function POST(request) {
       if (eventId) await sb.from('turnos_propios').update({ google_event_id: eventId }).eq('id', turno.id);
     }
 
-    return NextResponse.json({ ok: true });
+    // Si la empresa pide seña para confirmar, generamos el link de pago y lo devolvemos:
+    // el turno ya queda reservado (bloquea el horario), pero se marca "pendiente" hasta que
+    // el webhook confirme el pago. Si no hay seña configurada, la reserva queda confirmada ya.
+    let pagoUrl = null;
+    if (empresa.mercadopago_access_token && empresa.mercadopago_senia_monto > 0 && turno) {
+      const origen = request.headers.get('origin') || new URL(request.url).origin;
+      const pref = await crearPreferencia({
+        accessToken: empresa.mercadopago_access_token,
+        titulo: `Seña — ${servicio} con ${profesional} — ${empresa.nombre}`,
+        monto: empresa.mercadopago_senia_monto,
+        externalReference: `turno:${turno.id}:tipo:senia`,
+        backUrl: `${origen}/reservar/${empresaSlug}?pago=ok`,
+        notificationUrl: `${origen}/api/public/mercadopago/webhook?empresaId=${empresaId}`
+      });
+      if (pref) {
+        pagoUrl = pref.initPoint;
+        await sb.from('turnos_propios').update({ mp_preference_id: pref.id, mp_payment_status: 'pendiente' }).eq('id', turno.id);
+      }
+    }
+
+    return NextResponse.json({ ok: true, pagoUrl, seniaMonto: pagoUrl ? empresa.mercadopago_senia_monto : null });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }

@@ -15,6 +15,7 @@ import CajaComisionesSection from './CajaComisionesSection';
 import ProfesionalesAdmin from './ProfesionalesAdmin';
 import AgendaBuilder from './AgendaBuilder';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
+import MercadoPagoConfig from './MercadoPagoConfig';
 import PacientesPanel from './PacientesPanel';
 import XenomAdmin from './XenomAdmin';
 
@@ -263,6 +264,7 @@ function Dashboard({
     { id: 'caja', label: 'Caja y comisiones' },
     { id: 'profesionales-admin', label: 'Profesionales' },
     { id: 'google-calendar', label: 'Google Calendar' },
+    { id: 'mercadopago', label: 'Mercado Pago' },
   ];
 
   const necesitaStats = ['resumen', 'equipo', 'simulador', 'oportunidad'].includes(activeSection);
@@ -388,6 +390,10 @@ function Dashboard({
 
           {activeSection === 'google-calendar' && (
             <section><div className="card"><GoogleCalendarConfig /></div></section>
+          )}
+
+          {activeSection === 'mercadopago' && (
+            <section><div className="card"><MercadoPagoConfig /></div></section>
           )}
 
           <footer>Xenom — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>

@@ -61,7 +61,11 @@ export async function GET(request) {
       };
     });
     return NextResponse.json({
-      empresa: { nombre: empresa.nombre, nombreCorto: empresa.nombre_corto, ciudad: empresa.ciudad, logoUrl: empresa.logo_url, colorPrimario: empresa.color_primario, colorAcento: empresa.color_acento },
+      empresa: {
+        nombre: empresa.nombre, nombreCorto: empresa.nombre_corto, ciudad: empresa.ciudad, logoUrl: empresa.logo_url,
+        colorPrimario: empresa.color_primario, colorAcento: empresa.color_acento,
+        seniaMonto: (empresa.mercadopago_access_token && empresa.mercadopago_senia_monto > 0) ? empresa.mercadopago_senia_monto : null
+      },
       profesionales: result
     });
   } catch (err) {

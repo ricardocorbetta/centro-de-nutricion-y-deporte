@@ -30,6 +30,35 @@ function buildMonthOptions() {
   return opts;
 }
 
+function imprimirLiquidacion({ profesional, desde, hasta, monto, comision, pct, count }) {
+  const w = window.open('', '_blank', 'width=420,height=600');
+  w.document.write(`
+    <html><head><title>Liquidación — ${profesional}</title>
+    <style>
+      body{font-family:sans-serif;padding:28px;color:#15272A;}
+      h1{font-size:16px;margin:0 0 2px;}
+      .sub{font-size:11px;color:#5C6E70;margin-bottom:20px;}
+      table{width:100%;border-collapse:collapse;font-size:13px;}
+      td{padding:6px 0;border-bottom:1px solid #eee;}
+      td:first-child{color:#5C6E70;width:50%;}
+      .total{font-size:18px;font-weight:700;margin-top:18px;}
+      .firma{margin-top:60px;border-top:1px solid #999;padding-top:6px;font-size:11px;color:#5C6E70;width:220px;}
+    </style></head><body>
+    <h1>Liquidación de comisión</h1>
+    <div class="sub">${profesional} · ${desde} a ${hasta}</div>
+    <table>
+      <tr><td>Turnos cobrados</td><td>${count}</td></tr>
+      <tr><td>Total cobrado</td><td>$${Math.round(monto).toLocaleString('es-AR')}</td></tr>
+      <tr><td>% de comisión</td><td>${pct}%</td></tr>
+    </table>
+    <div class="total">A liquidar: $${Math.round(comision).toLocaleString('es-AR')}</div>
+    <div class="firma">Firma</div>
+    <script>window.print();</script>
+    </body></html>
+  `);
+  w.document.close();
+}
+
 export default function CajaComisionesSection() {
   const [modo, setModo] = useState('mes'); // 'mes' | 'rango'
   const [mes, setMes] = useState(currentMonthKey());
@@ -159,12 +188,23 @@ export default function CajaComisionesSection() {
             <div>
               <h3 style={{ marginTop: 0, fontSize: 13.5, fontWeight: 700 }}>Por profesional</h3>
               <table className="plain">
-                <thead><tr><th>Profesional</th><th>Cobrado</th><th>Comisión</th><th>Turnos</th></tr></thead>
+                <thead><tr><th>Profesional</th><th>Cobrado</th><th>Comisión</th><th>Turnos</th><th></th></tr></thead>
                 <tbody>
-                  {profesionalRows.map(([name, d]) => (
-                    <tr key={name}><td>{name}</td><td>{fmtMoney(d.monto)}</td><td>{fmtMoney(d.comision)}</td><td>{d.count}</td></tr>
-                  ))}
-                  {!profesionalRows.length && <tr><td colSpan={4} style={{ color: 'var(--ink-faint)' }}>Sin cobros registrados en el rango.</td></tr>}
+                  {profesionalRows.map(([name, d]) => {
+                    const pct = config.find(c => c.profesional === name)?.pct_profesional ?? defaultPct;
+                    return (
+                      <tr key={name}>
+                        <td>{name}</td><td>{fmtMoney(d.monto)}</td><td>{fmtMoney(d.comision)}</td><td>{d.count}</td>
+                        <td>
+                          <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }}
+                            onClick={() => imprimirLiquidacion({ profesional: name, desde, hasta, monto: d.monto, comision: d.comision, pct, count: d.count })}>
+                            Recibo
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!profesionalRows.length && <tr><td colSpan={5} style={{ color: 'var(--ink-faint)' }}>Sin cobros registrados en el rango.</td></tr>}
                 </tbody>
               </table>
             </div>

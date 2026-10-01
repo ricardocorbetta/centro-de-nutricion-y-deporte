@@ -15,8 +15,8 @@ function fechaLarga(iso) {
 }
 
 // Vista de lista tipo drApp: tabs por estado + tabla con un dropdown de estado por fila.
-// Props: fecha, setFecha, turnos, loading, errorMsg, empresaNombre, onCambiarEstado, onAbrirRecordatorio
-export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg, onCambiarEstado, onAbrirRecordatorio }) {
+// Props: fecha, setFecha, turnos, loading, errorMsg, empresaNombre, onCambiarEstado, onAbrirRecordatorio, onCobrarMP
+export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg, onCambiarEstado, onAbrirRecordatorio, onCobrarMP }) {
   const [tab, setTab] = useState('todos');
 
   const counts = useMemo(() => {
@@ -74,9 +74,12 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
                   </span>
                 )}
               </td>
-              <td>
+              <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {t.id ? (
-                  <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onAbrirRecordatorio(t)}>WhatsApp</button>
+                  <>
+                    <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onAbrirRecordatorio(t)}>WhatsApp</button>
+                    {onCobrarMP && <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => onCobrarMP(t)}>Cobrar MP</button>}
+                  </>
                 ) : (
                   <span style={{ fontSize: 10.5, color: 'var(--ink-faint)' }}>importado</span>
                 )}

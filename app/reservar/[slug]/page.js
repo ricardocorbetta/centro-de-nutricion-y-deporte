@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
+import { fmtMoney } from '../../../lib/stats';
 import LoadingSkeleton from '../../LoadingSkeleton';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
@@ -65,6 +66,12 @@ export default function ReservarPage({ params }) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      if (data.pagoUrl) {
+        // El turno ya quedó reservado (bloquea el horario); lo que falta es la seña para
+        // confirmarlo del todo. Mandamos directo al checkout de Mercado Pago.
+        window.location.href = data.pagoUrl;
+        return;
+      }
       setConfirmado(true);
     } catch (err) {
       setErrorMsg(err.message);
@@ -74,6 +81,7 @@ export default function ReservarPage({ params }) {
   }
 
   const puedeConfirmar = profesional && servicio && fecha && hora && pacienteNombre.trim();
+  const volvioDePago = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pago') === 'ok';
 
   if (notFound) {
     return (
@@ -81,6 +89,19 @@ export default function ReservarPage({ params }) {
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <h2 style={{ fontSize: 16 }}>No encontramos este centro</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Revisá el link de reserva que te compartieron.</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (volvioDePago) {
+    return (
+      <Shell empresa={empresa}>
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <h2 style={{ fontSize: 18, marginBottom: 8 }}>¡Listo, gracias!</h2>
+          <p style={{ color: 'var(--ink-soft)' }}>
+            Recibimos tu pago y tu turno queda confirmado. Si no te llega la confirmación en unos minutos, comunicate con el centro.
+          </p>
         </div>
       </Shell>
     );
@@ -162,8 +183,13 @@ export default function ReservarPage({ params }) {
                   <div className="field"><label>Tu nombre</label><input value={pacienteNombre} onChange={e => setPacienteNombre(e.target.value)} /></div>
                   <div className="field"><label>Tu teléfono (opcional)</label><input value={pacienteTelefono} onChange={e => setPacienteTelefono(e.target.value)} /></div>
                 </div>
+                {empresa?.seniaMonto > 0 && (
+                  <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: -4 }}>
+                    Para confirmar este turno se pide una seña de <b>{fmtMoney(empresa.seniaMonto)}</b> por Mercado Pago — te vamos a llevar a pagarla en el siguiente paso.
+                  </p>
+                )}
                 <button className="icon-btn primary" disabled={!puedeConfirmar || confirmando} onClick={confirmar}>
-                  {confirmando ? 'Confirmando…' : 'Confirmar turno'}
+                  {confirmando ? 'Confirmando…' : (empresa?.seniaMonto > 0 ? 'Pagar seña y confirmar' : 'Confirmar turno')}
                 </button>
               </>
             )}

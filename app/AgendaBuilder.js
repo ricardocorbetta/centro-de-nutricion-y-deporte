@@ -98,6 +98,18 @@ export default function AgendaBuilder({ empresaSlug }) {
     window.open(url, '_blank');
   }
 
+  async function cobrarMP(turno) {
+    if (!turno.id) return;
+    try {
+      const res = await fetch(`/api/turnos/${turno.id}/cobrar-mp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      window.open(data.link, '_blank');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   function compartirLinkReserva() {
     const origen = typeof window !== 'undefined' ? window.location.origin : '';
     const link = `${origen}/reservar/${empresaSlug}`;
@@ -233,7 +245,7 @@ export default function AgendaBuilder({ empresaSlug }) {
       {vista === 'lista' && (
         <AgendaLista
           fecha={fecha} setFecha={setFecha} turnos={turnos} loading={loading} errorMsg={errorMsg}
-          onCambiarEstado={cambiarEstado} onAbrirRecordatorio={abrirRecordatorio}
+          onCambiarEstado={cambiarEstado} onAbrirRecordatorio={abrirRecordatorio} onCobrarMP={cobrarMP}
         />
       )}
 
@@ -289,6 +301,7 @@ export default function AgendaBuilder({ empresaSlug }) {
                               {turno.id && turno.status !== 'cancelled' && (
                                 <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
+                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cobrarMP(turno)}>Cobrar MP</button>
                                   {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => { if (window.confirm('¿Cancelar este turno?')) cambiarEstado(turno, 'cancelled'); }}>Cancelar</button>
                                 </div>
