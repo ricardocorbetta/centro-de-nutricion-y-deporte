@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import LoadingSkeleton from './LoadingSkeleton';
 
 export default function GoogleCalendarConfig() {
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,7 @@ export default function GoogleCalendarConfig() {
     }
   }
 
-  if (loading) return <p style={{ color: 'var(--ink-faint)' }}>Cargando…</p>;
+  if (loading) return <LoadingSkeleton lines={2} widths={['60%', '90%']} />;
 
   if (!disponible) {
     return (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
+import LoadingSkeleton from './LoadingSkeleton';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -139,7 +140,7 @@ export default function CajaComisionesSection() {
               {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          {loading && <span style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>Cargando…</span>}
+          {loading && <div style={{ width: 90 }}><LoadingSkeleton lines={1} widths={['100%']} /></div>}
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 20 }}>

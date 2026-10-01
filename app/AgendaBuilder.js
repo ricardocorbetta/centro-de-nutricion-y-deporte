@@ -5,6 +5,7 @@ import { ESTADO_LABEL, ESTADO_CLASS } from '../lib/agendaEstados';
 import AgendaLista from './AgendaLista';
 import AgendaSemana from './AgendaSemana';
 import AgendaCrearTurnoModal from './AgendaCrearTurnoModal';
+import ConfirmModal from './ConfirmModal';
 
 const STEP_MIN = 10;
 
@@ -43,6 +44,7 @@ export default function AgendaBuilder({ empresaSlug }) {
   const [compartirMenuOpen, setCompartirMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalInitial, setModalInitial] = useState(null);
+  const [confirmando, setConfirmando] = useState(null);
 
   async function cargarProfesionales(f) {
     if (!empresaSlug) return;
@@ -294,7 +296,10 @@ export default function AgendaBuilder({ empresaSlug }) {
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
                                   <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cobrarMP(turno)}>Cobrar MP</button>
                                   {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
-                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => { if (window.confirm('¿Cancelar este turno?')) cambiarEstado(turno, 'cancelled'); }}>Cancelar</button>
+                                  <button className="icon-btn" style={{ padding: '2px 6px', fontSize: 10.5 }} onClick={() => setConfirmando({
+                                    mensaje: '¿Cancelar este turno?', destructivo: true, textoConfirmar: 'Cancelar turno',
+                                    onConfirm: () => cambiarEstado(turno, 'cancelled')
+                                  })}>Cancelar</button>
                                 </div>
                               )}
                               {!turno.id && (
@@ -329,6 +334,7 @@ export default function AgendaBuilder({ empresaSlug }) {
         profesionales={profesionales} initial={modalInitial} onCreated={onTurnoCreado}
         empresaSlug={empresaSlug}
       />
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </>
   );
 }

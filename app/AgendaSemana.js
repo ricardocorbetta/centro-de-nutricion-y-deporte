@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
+import LoadingSkeleton from './LoadingSkeleton';
 
 const DOW_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -91,7 +92,7 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
       </div>
 
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
-      {loading && <p style={{ color: 'var(--ink-faint)' }}>Cargando…</p>}
+      {loading && <LoadingSkeleton lines={1} widths={['30%']} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', gap: 10, overflowX: 'auto' }}>
         {dias.map(d => {

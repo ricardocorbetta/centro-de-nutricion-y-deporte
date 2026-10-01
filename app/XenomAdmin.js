@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import LoadingSkeleton from './LoadingSkeleton';
 
 function slugPreview(s) {
   return (s || '').toLowerCase()
@@ -162,7 +163,7 @@ export default function XenomAdmin({ name, username }) {
           )}
 
           {loading ? (
-            <p style={{ color: 'var(--ink-faint)' }}>Cargando…</p>
+            <LoadingSkeleton lines={4} widths={['100%', '100%', '100%', '60%']} />
           ) : (
             <table className="plain">
               <thead>

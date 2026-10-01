@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ConfirmModal from './ConfirmModal';
+import LoadingSkeleton from './LoadingSkeleton';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DIA_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Lunes primero, Domingo al final
@@ -64,7 +66,7 @@ export default function ProfesionalesAdmin() {
         <button className="icon-btn primary" onClick={crearProfesional}>+ Agregar profesional</button>
       </div>
 
-      {loading ? <p style={{ color: 'var(--ink-faint)' }}>Cargando…</p> : (
+      {loading ? <LoadingSkeleton lines={3} widths={['100%', '100%', '70%']} /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {profesionales.map(p => (
             <div key={p.nombre} style={{ border: '1px solid var(--border-strong)', borderRadius: 10, overflow: 'hidden' }}>
@@ -225,6 +227,7 @@ function ExcepcionesPuntuales({ profesional, excepciones, onChange }) {
 function Servicios({ profesional, servicios, onChange }) {
   const [nombre, setNombre] = useState('');
   const [duracion, setDuracion] = useState('40');
+  const [confirmando, setConfirmando] = useState(null);
 
   async function agregar() {
     if (!nombre.trim()) return;
@@ -243,10 +246,14 @@ function Servicios({ profesional, servicios, onChange }) {
     onChange();
   }
 
-  async function borrar(id) {
-    if (!window.confirm('¿Quitar este servicio?')) return;
-    await fetch(`/api/admin/servicios/${id}`, { method: 'DELETE' });
-    onChange();
+  function borrar(id) {
+    setConfirmando({
+      mensaje: '¿Quitar este servicio?', destructivo: true, textoConfirmar: 'Quitar',
+      onConfirm: async () => {
+        await fetch(`/api/admin/servicios/${id}`, { method: 'DELETE' });
+        onChange();
+      }
+    });
   }
 
   return (
@@ -274,6 +281,7 @@ function Servicios({ profesional, servicios, onChange }) {
         <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>min</span>
         <button className="icon-btn primary" onClick={agregar}>Agregar servicio</button>
       </div>
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </div>
   );
 }
