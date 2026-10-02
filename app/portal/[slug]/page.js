@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { LOGO_DATA_URI } from '../../../lib/logo';
 import LoadingSkeleton from '../../LoadingSkeleton';
 import PlataformaFooter from '../../PlataformaFooter';
+import EvolucionChart from '../../EvolucionChart';
 
 const TIPO_LABEL = { plan: 'Plan alimentario', bioimpedancia: 'Bioimpedancia', antropometria: 'Antropometría' };
 
@@ -115,10 +116,13 @@ export default function PortalPage({ params }) {
 const BIBLIOTECA_TIPO_LABEL = { receta: 'Receta', material_educativo: 'Material educativo', pauta_general: 'Pauta general', tip: 'Tip' };
 
 function PortalApp({ me, onLogout, colorPrimario }) {
-  const [tab, setTab] = useState(me.vigente ? 'historial' : 'biblioteca');
+  const [tab, setTab] = useState(me.vigente ? 'plan' : 'biblioteca');
   const [consultas, setConsultas] = useState([]);
   const [archivos, setArchivos] = useState([]);
   const [biblioteca, setBiblioteca] = useState([]);
+  const [plan, setPlan] = useState(null);
+  const [mediciones, setMediciones] = useState([]);
+  const [metrica, setMetrica] = useState('peso');
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -128,14 +132,29 @@ function PortalApp({ me, onLogout, colorPrimario }) {
     if (me.vigente) {
       calls.push(fetch('/api/portal/historial').then(r => r.json()));
       calls.push(fetch('/api/portal/archivos').then(r => r.json()));
+      calls.push(fetch('/api/portal/plan').then(r => r.json()));
+      calls.push(fetch('/api/portal/evolucion').then(r => r.json()));
     }
-    Promise.all(calls).then(([b, h, a]) => {
+    Promise.all(calls).then(([b, h, a, p, ev]) => {
       setBiblioteca(b.contenido || []);
       if (h) setConsultas(h.consultas || []);
       if (a) setArchivos(a.archivos || []);
+      if (p) setPlan(p.plan || null);
+      if (ev) setMediciones(ev.mediciones || []);
     }).catch(e => setErrorMsg(e.message))
       .finally(() => setLoading(false));
   }, [me.vigente]);
+
+  const METRICAS = [
+    { value: 'peso', label: 'Peso', unidad: ' kg' },
+    { value: 'pct_grasa', label: '% Grasa', unidad: '%' },
+    { value: 'pct_musculo', label: '% Músculo', unidad: '%' },
+    { value: 'perimetro_cintura', label: 'Cintura', unidad: ' cm' },
+    { value: 'perimetro_cadera', label: 'Cadera', unidad: ' cm' }
+  ];
+  const metricaInfo = METRICAS.find(m => m.value === metrica);
+  const conDatos = METRICAS.filter(m => mediciones.some(med => med[m.value] !== null));
+  const puntosChart = mediciones.map(m => ({ fecha: m.fecha, y: m[metrica] !== null ? Number(m[metrica]) : null }));
 
   return (
     <div>
@@ -151,6 +170,8 @@ function PortalApp({ me, onLogout, colorPrimario }) {
       </div>
 
       <div className="tabbar" style={{ marginBottom: 16 }}>
+        <button className={tab === 'plan' ? 'active' : ''} onClick={() => setTab('plan')}>Mi plan</button>
+        <button className={tab === 'evolucion' ? 'active' : ''} onClick={() => setTab('evolucion')}>Mi evolución</button>
         <button className={tab === 'historial' ? 'active' : ''} onClick={() => setTab('historial')}>Historial</button>
         <button className={tab === 'archivos' ? 'active' : ''} onClick={() => setTab('archivos')}>Mis archivos</button>
         <button className={tab === 'biblioteca' ? 'active' : ''} onClick={() => setTab('biblioteca')}>Biblioteca</button>
@@ -158,7 +179,7 @@ function PortalApp({ me, onLogout, colorPrimario }) {
 
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
 
-      {(tab === 'historial' || tab === 'archivos') && !me.vigente ? (
+      {(tab === 'plan' || tab === 'evolucion' || tab === 'historial' || tab === 'archivos') && !me.vigente ? (
         <div className="card" style={{ padding: 20 }}>
           <div className="empty-state">
             <span className="icon">🔒</span>
@@ -170,7 +191,53 @@ function PortalApp({ me, onLogout, colorPrimario }) {
             </span>
           </div>
         </div>
-      ) : loading ? <LoadingSkeleton lines={4} /> : tab === 'historial' ? (
+      ) : loading ? <LoadingSkeleton lines={4} /> : tab === 'plan' ? (
+        plan ? (
+          <div className="card" style={{ padding: '18px 20px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
+              {fmtFecha(plan.fecha)}{plan.profesional ? ` · ${plan.profesional}` : ''}
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', margin: '4px 0 14px' }}>{plan.titulo}</div>
+            {(plan.secciones || []).map((sec, i) => (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{sec.nombre}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-soft)', whiteSpace: 'pre-wrap' }}>{sec.contenido}</div>
+              </div>
+            ))}
+            {plan.notas_generales && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', fontSize: 12.5, color: 'var(--ink-soft)' }}>
+                {plan.notas_generales}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span className="icon">🥗</span>
+            <span className="title">Todavía no tenés un plan cargado</span>
+            <span className="hint">Tu profesional va a armar acá tu plan nutricional.</span>
+          </div>
+        )
+      ) : tab === 'evolucion' ? (
+        mediciones.length > 0 ? (
+          <div className="card" style={{ padding: '18px 20px' }}>
+            {conDatos.length > 1 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                {conDatos.map(m => (
+                  <button key={m.value} className={'icon-btn' + (metrica === m.value ? ' primary' : '')}
+                    style={{ padding: '4px 10px', fontSize: 11.5 }} onClick={() => setMetrica(m.value)}>{m.label}</button>
+                ))}
+              </div>
+            )}
+            <EvolucionChart points={puntosChart} unidad={metricaInfo.unidad} color={colorPrimario} />
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span className="icon">📈</span>
+            <span className="title">Todavía no hay controles cargados</span>
+            <span className="hint">Tu profesional va a ir registrando tu peso y medidas en cada consulta.</span>
+          </div>
+        )
+      ) : tab === 'historial' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {consultas.map((c, i) => (
             <div key={i} className="card" style={{ padding: '14px 16px' }}>

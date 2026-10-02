@@ -6,6 +6,7 @@ import { ESTADO_LABEL } from '../lib/agendaEstados';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
 import CobroTurnoModal from './CobroTurnoModal';
+import EvolucionChart from './EvolucionChart';
 
 const TIPO_ARCHIVO = [
   { value: 'plan', label: 'Plan alimentario' },
@@ -306,6 +307,10 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
               </>
             )}
 
+            <EvolucionPaciente pacienteId={id} />
+
+            <PlanNutricional pacienteId={id} />
+
             <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Turnos</h2></div>
             <table className="plain" style={{ marginBottom: 18 }}>
               <thead><tr><th>Fecha</th><th>Profesional</th><th>Servicio</th><th>Estado</th><th>Saldo</th><th></th></tr></thead>
@@ -548,5 +553,303 @@ function ArchivosPaciente({ pacienteId }) {
 
       <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </>
+  );
+}
+
+// Evolución del paciente: historial de peso/medidas con gráfico, visible acá y en el portal del
+// paciente. Es el reemplazo de "subir un PDF de antropometría" por datos reales y comparables.
+function EvolucionPaciente({ pacienteId }) {
+  const [mediciones, setMediciones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [abierto, setAbierto] = useState(false);
+  const [metrica, setMetrica] = useState('peso');
+  const [confirmando, setConfirmando] = useState(null);
+
+  const vacio = { fecha: todayISO(), peso: '', altura: '', perimetroCintura: '', perimetroCadera: '', pctGrasa: '', pctMusculo: '', notas: '' };
+  const [form, setForm] = useState(vacio);
+  const [guardando, setGuardando] = useState(false);
+
+  async function cargar() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/mediciones`);
+      const data = await res.json();
+      if (!data.error) setMediciones(data.mediciones || []);
+    } catch (e) {} finally { setLoading(false); }
+  }
+
+  useEffect(() => { cargar(); }, [pacienteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function campo(key, value) { setForm(f => ({ ...f, [key]: value })); }
+
+  async function guardar() {
+    setGuardando(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/mediciones`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setForm(vacio);
+      setAbierto(false);
+      cargar();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  function borrar(m) {
+    setConfirmando({
+      mensaje: `¿Quitar el control del ${m.fecha}?`, destructivo: true, textoConfirmar: 'Quitar',
+      onConfirm: async () => {
+        await fetch(`/api/pacientes/${pacienteId}/mediciones/${m.id}`, { method: 'DELETE' });
+        cargar();
+      }
+    });
+  }
+
+  const METRICAS = [
+    { value: 'peso', label: 'Peso', unidad: ' kg' },
+    { value: 'pct_grasa', label: '% Grasa', unidad: '%' },
+    { value: 'pct_musculo', label: '% Músculo', unidad: '%' },
+    { value: 'perimetro_cintura', label: 'Cintura', unidad: ' cm' },
+    { value: 'perimetro_cadera', label: 'Cadera', unidad: ' cm' }
+  ];
+  const metricaInfo = METRICAS.find(m => m.value === metrica);
+  const puntos = mediciones.map(m => ({ fecha: m.fecha, y: m[metrica] !== null ? Number(m[metrica]) : null }));
+  const conDatos = METRICAS.filter(m => mediciones.some(med => med[m.value] !== null));
+
+  return (
+    <>
+      <div className="section-head">
+        <span className="dot" /><h2 style={{ fontSize: 14 }}>Evolución</h2>
+        <button className="icon-btn primary" style={{ marginLeft: 'auto', fontSize: 11.5, padding: '4px 10px' }} onClick={() => setAbierto(v => !v)}>
+          {abierto ? 'Cancelar' : '+ Cargar control'}
+        </button>
+      </div>
+
+      {loading ? <LoadingSkeleton lines={2} /> : mediciones.length === 0 && !abierto ? (
+        <div className="empty-state" style={{ padding: '16px 10px', marginBottom: 14 }}>
+          <span className="icon">📈</span>
+          <span className="title">Sin controles cargados todavía</span>
+          <span className="hint">Cargá el peso y las medidas en cada consulta para ver la evolución acá y en el portal del paciente.</span>
+        </div>
+      ) : mediciones.length > 0 && (
+        <>
+          {conDatos.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {conDatos.map(m => (
+                <button key={m.value} className={'icon-btn' + (metrica === m.value ? ' primary' : '')}
+                  style={{ padding: '4px 10px', fontSize: 11.5 }} onClick={() => setMetrica(m.value)}>{m.label}</button>
+              ))}
+            </div>
+          )}
+          <div style={{ marginBottom: 14 }}>
+            <EvolucionChart points={puntos} unidad={metricaInfo.unidad} />
+          </div>
+          <table className="plain" style={{ marginBottom: 14 }}>
+            <thead><tr><th>Fecha</th><th>Peso</th><th>% Grasa</th><th>% Músculo</th><th>Cintura</th><th>Cadera</th><th>Notas</th><th></th></tr></thead>
+            <tbody>
+              {[...mediciones].reverse().map(m => (
+                <tr key={m.id}>
+                  <td style={{ fontFamily: 'var(--mono)' }}>{m.fecha}</td>
+                  <td>{m.peso ?? '-'}</td>
+                  <td>{m.pct_grasa ?? '-'}</td>
+                  <td>{m.pct_musculo ?? '-'}</td>
+                  <td>{m.perimetro_cintura ?? '-'}</td>
+                  <td>{m.perimetro_cadera ?? '-'}</td>
+                  <td style={{ fontSize: 12 }}>{m.notas || '-'}</td>
+                  <td><button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => borrar(m)}>Quitar</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {abierto && (
+        <div className="manual-grid" style={{ marginBottom: 18 }}>
+          <div className="field"><label>Fecha</label><input type="date" value={form.fecha} onChange={e => campo('fecha', e.target.value)} /></div>
+          <div className="field"><label>Peso (kg)</label><input type="number" step="0.1" value={form.peso} onChange={e => campo('peso', e.target.value)} /></div>
+          <div className="field"><label>Altura (cm)</label><input type="number" step="0.1" value={form.altura} onChange={e => campo('altura', e.target.value)} /></div>
+          <div className="field"><label>% Grasa</label><input type="number" step="0.1" value={form.pctGrasa} onChange={e => campo('pctGrasa', e.target.value)} /></div>
+          <div className="field"><label>% Músculo</label><input type="number" step="0.1" value={form.pctMusculo} onChange={e => campo('pctMusculo', e.target.value)} /></div>
+          <div className="field"><label>Cintura (cm)</label><input type="number" step="0.1" value={form.perimetroCintura} onChange={e => campo('perimetroCintura', e.target.value)} /></div>
+          <div className="field"><label>Cadera (cm)</label><input type="number" step="0.1" value={form.perimetroCadera} onChange={e => campo('perimetroCadera', e.target.value)} /></div>
+          <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notas</label><input value={form.notas} onChange={e => campo('notas', e.target.value)} /></div>
+          {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 12.5, gridColumn: '1 / -1' }}>{errorMsg}</p>}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar control'}</button>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
+    </>
+  );
+}
+
+// Plan nutricional estructurado: reemplaza el PDF suelto por un plan armado con secciones
+// (ej. Desayuno, Almuerzo) que el paciente ve ordenado en su portal.
+function PlanNutricional({ pacienteId }) {
+  const [planes, setPlanes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [editor, setEditor] = useState(null); // null = cerrado, {} = nuevo, plan = editando
+  const [confirmando, setConfirmando] = useState(null);
+
+  async function cargar() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/planes`);
+      const data = await res.json();
+      if (!data.error) setPlanes(data.planes || []);
+    } catch (e) {} finally { setLoading(false); }
+  }
+
+  useEffect(() => { cargar(); }, [pacienteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function activar(plan) {
+    setConfirmando({
+      mensaje: `¿Poner "${plan.titulo}" como el plan activo del paciente? El paciente lo va a ver en su portal.`, textoConfirmar: 'Activar',
+      onConfirm: async () => {
+        await fetch(`/api/pacientes/${pacienteId}/planes/${plan.id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activo: true })
+        });
+        cargar();
+      }
+    });
+  }
+
+  function borrar(plan) {
+    setConfirmando({
+      mensaje: `¿Borrar el plan "${plan.titulo}"?`, destructivo: true, textoConfirmar: 'Borrar',
+      onConfirm: async () => {
+        await fetch(`/api/pacientes/${pacienteId}/planes/${plan.id}`, { method: 'DELETE' });
+        cargar();
+      }
+    });
+  }
+
+  return (
+    <>
+      <div className="section-head">
+        <span className="dot" /><h2 style={{ fontSize: 14 }}>Plan nutricional</h2>
+        <button className="icon-btn primary" style={{ marginLeft: 'auto', fontSize: 11.5, padding: '4px 10px' }} onClick={() => setEditor({})}>+ Nuevo plan</button>
+      </div>
+
+      {loading ? <LoadingSkeleton lines={2} /> : planes.length === 0 ? (
+        <div className="empty-state" style={{ padding: '16px 10px', marginBottom: 14 }}>
+          <span className="icon">🥗</span>
+          <span className="title">Sin plan cargado todavía</span>
+          <span className="hint">Armá un plan con secciones (Desayuno, Almuerzo…) y el paciente lo va a ver ordenado en su portal, sin descargar nada.</span>
+        </div>
+      ) : (
+        <table className="plain" style={{ marginBottom: 18 }}>
+          <thead><tr><th>Plan</th><th>Fecha</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            {planes.map(p => (
+              <tr key={p.id}>
+                <td>{p.titulo}</td>
+                <td style={{ fontFamily: 'var(--mono)' }}>{p.fecha}</td>
+                <td>{p.profesional || '-'}</td>
+                <td>{p.activo ? <span className="tag" style={{ background: 'var(--sage-soft)', color: 'var(--sage)' }}>Activo (visible al paciente)</span> : <span className="tag">Archivado</span>}</td>
+                <td style={{ display: 'flex', gap: 6 }}>
+                  <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => setEditor(p)}>Editar</button>
+                  {!p.activo && <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => activar(p)}>Activar</button>}
+                  <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => borrar(p)}>Borrar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {editor && (
+        <PlanEditorModal
+          pacienteId={pacienteId}
+          plan={editor.id ? editor : null}
+          onClose={() => setEditor(null)}
+          onSaved={() => { setEditor(null); cargar(); }}
+        />
+      )}
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
+    </>
+  );
+}
+
+// Modal para armar/editar un plan: título + secciones libres (nombre + texto de items), para no
+// forzar una estructura rígida de "comida/alimento" que no se ajuste a cómo arma el plan cada profesional.
+function PlanEditorModal({ pacienteId, plan, onClose, onSaved }) {
+  const [titulo, setTitulo] = useState(plan?.titulo || 'Plan nutricional');
+  const [notasGenerales, setNotasGenerales] = useState(plan?.notas_generales || '');
+  const [secciones, setSecciones] = useState(plan?.secciones?.length ? plan.secciones : [{ nombre: 'Desayuno', contenido: '' }]);
+  const [guardando, setGuardando] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  function cambiarSeccion(i, key, value) {
+    setSecciones(s => s.map((sec, idx) => idx === i ? { ...sec, [key]: value } : sec));
+  }
+  function agregarSeccion() { setSecciones(s => [...s, { nombre: '', contenido: '' }]); }
+  function quitarSeccion(i) { setSecciones(s => s.filter((_, idx) => idx !== i)); }
+
+  async function guardar() {
+    if (!titulo.trim()) { setErrorMsg('Ponele un título al plan.'); return; }
+    setGuardando(true);
+    setErrorMsg('');
+    try {
+      const body = { titulo, notasGenerales, secciones: secciones.filter(s => s.nombre.trim() || s.contenido.trim()) };
+      const url = plan ? `/api/pacientes/${pacienteId}/planes/${plan.id}` : `/api/pacientes/${pacienteId}/planes`;
+      const method = plan ? 'PATCH' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      onSaved();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', overflowY: 'auto', zIndex: 60 }}>
+      <div className="card" style={{ width: '100%', maxWidth: 620 }}>
+        <div className="section-head"><span className="dot" /><h2>{plan ? 'Editar plan' : 'Nuevo plan nutricional'}</h2></div>
+
+        <div className="field" style={{ marginBottom: 10 }}>
+          <label>Título</label>
+          <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="ej: Plan Octubre 2026" />
+        </div>
+
+        {secciones.map((sec, i) => (
+          <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 10, marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+              <input placeholder="Nombre de la sección (ej: Desayuno)" value={sec.nombre} onChange={e => cambiarSeccion(i, 'nombre', e.target.value)} style={{ flex: 1 }} />
+              <button className="icon-btn" style={{ padding: '4px 10px', fontSize: 11.5 }} onClick={() => quitarSeccion(i)}>Quitar</button>
+            </div>
+            <textarea rows={3} placeholder="Detalle (alimentos, cantidades, indicaciones)" value={sec.contenido}
+              onChange={e => cambiarSeccion(i, 'contenido', e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
+          </div>
+        ))}
+        <button className="icon-btn" style={{ marginBottom: 14 }} onClick={agregarSeccion}>+ Agregar sección</button>
+
+        <div className="field" style={{ marginBottom: 10 }}>
+          <label>Notas generales (opcional)</label>
+          <textarea rows={2} value={notasGenerales} onChange={e => setNotasGenerales(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
+        </div>
+
+        {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 12.5 }}>{errorMsg}</p>}
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="icon-btn" onClick={onClose}>Cancelar</button>
+          <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar plan'}</button>
+        </div>
+      </div>
+    </div>
   );
 }
