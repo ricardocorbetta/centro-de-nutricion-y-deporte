@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
+import SidePanel from './SidePanel';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -167,10 +168,7 @@ function PublicarModal({ item, onClose, onCreated }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
-      <div className="card" style={{ width: 460, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>{editando ? 'Editar publicación' : 'Publicar en la cartelera'}</h2></div>
-
+    <SidePanel open onClose={onClose} title={editando ? 'Editar publicación' : 'Publicar en la cartelera'} width={460}>
         <div className="manual-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 12 }}>
           <div className="field"><label>Tipo</label>
             <select value={tipo} onChange={e => setTipo(e.target.value)}>
@@ -201,7 +199,6 @@ function PublicarModal({ item, onClose, onCreated }) {
           <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : (editando ? 'Guardar cambios' : 'Publicar')}</button>
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }

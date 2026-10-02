@@ -8,6 +8,7 @@ import LoadingSkeleton from './LoadingSkeleton';
 import CobroTurnoModal from './CobroTurnoModal';
 import EvolucionChart from './EvolucionChart';
 import Avatar from './Avatar';
+import SidePanel from './SidePanel';
 
 const TIPO_ARCHIVO = [
   { value: 'plan', label: 'Plan alimentario' },
@@ -210,9 +211,7 @@ function PacienteFormModal({ onClose, onSaved, inicial }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
-      <div className="card" style={{ width: 420, maxWidth: '90vw' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>{inicial ? 'Editar paciente' : 'Nuevo paciente'}</h2></div>
+    <SidePanel open onClose={onClose} title={inicial ? 'Editar paciente' : 'Nuevo paciente'} width={420}>
         <div className="manual-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
           {CAMPOS_FICHA.map(c => (
             <div className="field" key={c.key} style={c.key === 'nombre' ? { gridColumn: '1 / -1' } : undefined}>
@@ -230,8 +229,7 @@ function PacienteFormModal({ onClose, onSaved, inicial }) {
           <button className="icon-btn primary" disabled={saving} onClick={guardar}>{saving ? 'Guardando…' : 'Guardar'}</button>
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }
 
@@ -851,10 +849,7 @@ function PlanEditorModal({ pacienteId, plan, onClose, onSaved }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', overflowY: 'auto', zIndex: 60 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 620 }}>
-        <div className="section-head"><span className="dot" /><h2>{plan ? 'Editar plan' : 'Nuevo plan nutricional'}</h2></div>
-
+    <SidePanel open onClose={onClose} title={plan ? 'Editar plan' : 'Nuevo plan nutricional'} width={560}>
         <div className="field" style={{ marginBottom: 10 }}>
           <label>Título</label>
           <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="ej: Plan Octubre 2026" />
@@ -883,7 +878,6 @@ function PlanEditorModal({ pacienteId, plan, onClose, onSaved }) {
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
           <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar plan'}</button>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }

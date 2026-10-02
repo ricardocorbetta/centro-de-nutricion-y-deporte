@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
+import SidePanel from './SidePanel';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -50,8 +51,6 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
   }
 
   useEffect(() => { if (turno) cargar(); }, [turno?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!turno) return null;
 
   async function guardarPrecio() {
     const precioTotal = Number(precioInput);
@@ -119,16 +118,14 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55 }} onClick={onClose}>
-      <div className="card" style={{ width: 460, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>Cobrar turno</h2></div>
-        <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '-8px 0 14px' }}>
-          {turno.paciente_nombre || 'Paciente'} · {turno.resource} · {(turno.service || '').replace('Nutrición / ', '')}
-        </p>
-
-        {loading ? (
-          <div className="skeleton skeleton-block" />
-        ) : (
+    <SidePanel open={!!turno} onClose={onClose} title="Cobrar turno"
+      subtitle={turno ? `${turno.paciente_nombre || 'Paciente'} · ${turno.resource} · ${(turno.service || '').replace('Nutrición / ', '')}` : ''}
+      width={480}>
+      {turno && (
+        <>
+          {loading ? (
+            <div className="skeleton skeleton-block" />
+          ) : (
           <>
             {estado.precioTotal === null ? (
               <div style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-strong)', borderRadius: 10, padding: 14, marginBottom: 18 }}>
@@ -215,14 +212,11 @@ export default function CobroTurnoModal({ turno, onClose, onChanged }) {
               </>
             )}
           </>
-        )}
+          )}
 
-        {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13, marginTop: 10 }}>{errorMsg}</p>}
-
-        <div style={{ marginTop: 18 }}>
-          <button className="icon-btn" onClick={onClose}>Cerrar</button>
-        </div>
-      </div>
-    </div>
+          {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13, marginTop: 10 }}>{errorMsg}</p>}
+        </>
+      )}
+    </SidePanel>
   );
 }

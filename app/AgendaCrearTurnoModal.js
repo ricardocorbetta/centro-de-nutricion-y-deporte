@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { MODALIDADES } from '../lib/agendaEstados';
 import PacienteSelector from './PacienteSelector';
+import SidePanel from './SidePanel';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -82,8 +83,6 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, empresaSlug, profesional, servicio, fecha, svcData?.duracion]);
 
-  if (!open) return null;
-
   const puedeGuardar = fecha && hora && profesional && servicio && paciente;
 
   async function confirmar() {
@@ -110,13 +109,7 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 50
-    }} onClick={onClose}>
-      <div className="card" style={{ width: 440, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>Nuevo turno</h2></div>
-
+    <SidePanel open={open} onClose={onClose} title="Nuevo turno" width={460}>
         <div className="manual-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <div className="field"><label>Fecha</label>
             <input type="date" value={fecha} onChange={e => { setFecha(e.target.value); setHora(''); }} />
@@ -195,7 +188,6 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
           </button>
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }

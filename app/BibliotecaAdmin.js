@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
 import Avatar from './Avatar';
+import SidePanel from './SidePanel';
 
 const TIPO_TAG_CLASS = { receta: 'sage', pauta_general: 'rust' };
 
@@ -192,10 +193,7 @@ function PublicarModal({ profesionales, onClose, onCreated }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,39,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
-      <div className="card" style={{ width: 480, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div className="section-head"><span className="dot" /><h2>Publicar contenido</h2></div>
-
+    <SidePanel open onClose={onClose} title="Publicar contenido" width={480}>
         <div className="manual-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 12 }}>
           <div className="field">
             <label>Profesional</label>
@@ -268,7 +266,6 @@ function PublicarModal({ profesionales, onClose, onCreated }) {
           <button className="icon-btn primary" disabled={guardando} onClick={guardar}>{guardando ? 'Publicando…' : 'Publicar'}</button>
           <button className="icon-btn" onClick={onClose}>Cancelar</button>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }
