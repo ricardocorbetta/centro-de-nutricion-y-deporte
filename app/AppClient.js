@@ -14,6 +14,7 @@ import SecretariaView from './SecretariaView';
 import CajaComisionesSection from './CajaComisionesSection';
 import ProfesionalesAdmin from './ProfesionalesAdmin';
 import AgendaBuilder from './AgendaBuilder';
+import RecordatoriosPanel from './RecordatoriosPanel';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import MercadoPagoConfig from './MercadoPagoConfig';
 import PacientesPanel from './PacientesPanel';
@@ -261,6 +262,7 @@ function Dashboard({
   const NAV_GROUPS = [
     { label: 'Operación diaria', items: [
       { id: 'agenda-director', label: 'Agenda', icon: '📅' },
+      { id: 'recordatorios', label: 'Recordatorios', icon: '💬' },
       { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
       { id: 'biblioteca', label: 'Biblioteca', icon: '📚' },
       { id: 'cartelera', label: 'Cartelera', icon: '📣' },
@@ -346,6 +348,10 @@ function Dashboard({
 
           {activeSection === 'agenda-director' && (
             <section><div className="card"><AgendaBuilder empresaSlug={empresa?.slug} /></div></section>
+          )}
+
+          {activeSection === 'recordatorios' && (
+            <section><div className="card"><RecordatoriosPanel empresaNombre={empresa?.nombre} /></div></section>
           )}
 
           {activeSection === 'pacientes' && (
