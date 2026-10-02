@@ -5,6 +5,9 @@ import { LOGO_DATA_URI } from '../../../lib/logo';
 import LoadingSkeleton from '../../LoadingSkeleton';
 import PlataformaFooter from '../../PlataformaFooter';
 import EvolucionChart from '../../EvolucionChart';
+import Avatar from '../../Avatar';
+
+const BIBLIOTECA_TIPO_CLASS = { receta: 'sage', pauta_general: 'rust' };
 
 const TIPO_LABEL = { plan: 'Plan alimentario', bioimpedancia: 'Bioimpedancia', antropometria: 'Antropometría' };
 
@@ -160,7 +163,7 @@ function PortalApp({ me, onLogout, colorPrimario }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src={me.empresa.logoUrl || LOGO_DATA_URI} alt="" style={{ height: 30 }} />
+          <Avatar nombre={me.paciente.nombre} size={38} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>Hola, {me.paciente.nombre.split(' ')[0]}</div>
             <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{me.empresa.nombreCorto || me.empresa.nombre}</div>
@@ -194,10 +197,10 @@ function PortalApp({ me, onLogout, colorPrimario }) {
       ) : loading ? <LoadingSkeleton lines={4} /> : tab === 'plan' ? (
         plan ? (
           <div className="card" style={{ padding: '18px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--ink-faint)' }}>
               {fmtFecha(plan.fecha)}{plan.profesional ? ` · ${plan.profesional}` : ''}
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', margin: '4px 0 14px' }}>{plan.titulo}</div>
+            <div style={{ fontSize: 18, fontFamily: 'var(--serif)', fontWeight: 600, color: 'var(--ink)', margin: '4px 0 14px' }}>{plan.titulo}</div>
             {(plan.secciones || []).map((sec, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{sec.nombre}</div>
@@ -258,10 +261,8 @@ function PortalApp({ me, onLogout, colorPrimario }) {
           {archivos.map(a => (
             <a key={a.id} href={a.url || '#'} target="_blank" rel="noreferrer" className="card"
               style={{ padding: '14px 16px', display: 'block', textDecoration: 'none' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
-                {TIPO_LABEL[a.tipo] || a.tipo}
-              </div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '2px 0' }}>{a.categoria || a.nombre}</div>
+              <span className="tag">{TIPO_LABEL[a.tipo] || a.tipo}</span>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '6px 0 2px' }}>{a.categoria || a.nombre}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{fmtFecha(a.fecha)} · Descargar ↓</div>
             </a>
           ))}
@@ -278,10 +279,8 @@ function PortalApp({ me, onLogout, colorPrimario }) {
           {biblioteca.map(b => (
             <a key={b.id} href={b.url || undefined} target={b.url ? '_blank' : undefined} rel="noreferrer" className="card"
               style={{ padding: '14px 16px', display: 'block', textDecoration: 'none', cursor: b.url ? 'pointer' : 'default' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
-                {BIBLIOTECA_TIPO_LABEL[b.tipo] || b.tipo}
-              </div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '2px 0' }}>{b.titulo}</div>
+              <span className={'tag' + (BIBLIOTECA_TIPO_CLASS[b.tipo] ? ' ' + BIBLIOTECA_TIPO_CLASS[b.tipo] : '')}>{BIBLIOTECA_TIPO_LABEL[b.tipo] || b.tipo}</span>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', margin: '6px 0 2px' }}>{b.titulo}</div>
               {b.descripcion && <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginBottom: 2 }}>{b.descripcion}</div>}
               <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{b.profesional} · {fmtFecha(b.fecha)}{b.url ? ' · Ver ↓' : ''}</div>
             </a>

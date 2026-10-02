@@ -99,6 +99,7 @@ export default function ReservarPage({ params }) {
     return (
       <Shell empresa={empresa}>
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div className="success-badge">✅</div>
           <h2 style={{ fontSize: 18, marginBottom: 8 }}>¡Listo, gracias!</h2>
           <p style={{ color: 'var(--ink-soft)' }}>
             Recibimos tu pago y tu turno queda confirmado. Si no te llega la confirmación en unos minutos, comunicate con el centro.
@@ -112,6 +113,7 @@ export default function ReservarPage({ params }) {
     return (
       <Shell empresa={empresa}>
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div className="success-badge">✅</div>
           <h2 style={{ fontSize: 18, marginBottom: 8 }}>¡Turno reservado!</h2>
           <p style={{ color: 'var(--ink-soft)' }}>
             {servicio.replace('Nutrición / ', '').replace('Nutrición Infantil / ', '')} con {profesional}<br />
@@ -166,7 +168,7 @@ export default function ReservarPage({ params }) {
                       <span className="hint">Probá con otra fecha.</span>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+                    <div className="timeslot-grid">
                       {horarios.map(h => (
                         <button key={h} type="button"
                           className={'icon-btn' + (hora === h ? ' primary' : '')}

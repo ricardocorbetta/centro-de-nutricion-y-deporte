@@ -76,6 +76,7 @@ export default function PrefiltroPage({ params }) {
     return (
       <Shell empresa={empresa}>
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div className="success-badge">✅</div>
           <h2 style={{ fontSize: 18, marginBottom: 8 }}>¡Gracias, {form.nombre.split(' ')[0]}!</h2>
           <p style={{ color: 'var(--ink-soft)' }}>
             Recibimos tus datos. Nos vemos en la primera consulta{form.fechaPrimeraConsulta ? ` el ${form.fechaPrimeraConsulta}` : ''}.

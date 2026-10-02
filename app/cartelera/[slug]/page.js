@@ -60,18 +60,16 @@ export default function CarteleraPage({ params }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {(data.cartelera || []).map(c => (
-              <div key={c.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div key={c.id} className="card" style={{ padding: 0, overflow: 'hidden', borderLeft: c.destacar ? `3px solid ${colorPrimario}` : undefined }}>
                 {c.imagenUrl && <img src={c.imagenUrl} alt={c.titulo} style={{ width: '100%', display: 'block', maxHeight: 320, objectFit: 'cover' }} />}
                 <div style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: colorPrimario, textTransform: 'uppercase', letterSpacing: '.03em' }}>
-                      {TIPO_LABEL[c.tipo] || c.tipo}
-                    </span>
-                    {c.destacar && <span style={{ fontSize: 12 }}>⭐</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span className="tag">{TIPO_LABEL[c.tipo] || c.tipo}</span>
+                    {c.destacar && <span className="tag gold">★ Destacado</span>}
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{c.titulo}</div>
+                  <div style={{ fontSize: 16, fontFamily: 'var(--serif)', fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{c.titulo}</div>
                   {c.descripcion && <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 6 }}>{c.descripcion}</div>}
-                  <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{fmtFecha(c.fecha)}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontFamily: 'var(--mono)' }}>{fmtFecha(c.fecha)}</div>
                 </div>
               </div>
             ))}
