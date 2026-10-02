@@ -33,6 +33,16 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
   const [slots, setSlots] = useState(null); // null = todavía no se consultó
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [atiendeEseDia, setAtiendeEseDia] = useState(true);
+  const [financiadoresUsados, setFinanciadoresUsados] = useState([]);
+
+  // Financiadores ya usados antes, para autocompletar y evitar que un typo ("Particular " vs
+  // "particular") fragmente el reporte de "Auditar financiadores" en Resumen (agrupa por string exacto).
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/pacientes/financiadores').then(r => r.json()).then(d => {
+      if (!d.error) setFinanciadoresUsados(d.financiadores || []);
+    }).catch(() => {});
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -167,7 +177,10 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
             <PacienteSelector value={paciente} onChange={setPaciente} />
           </div>
           <div className="field"><label>Financiador</label>
-            <input value={financiador} onChange={e => setFinanciador(e.target.value)} />
+            <input value={financiador} onChange={e => setFinanciador(e.target.value)} list="financiadores-usados" />
+            <datalist id="financiadores-usados">
+              {financiadoresUsados.map(f => <option key={f} value={f} />)}
+            </datalist>
           </div>
           <div className="field"><label>Precio total (opcional)</label>
             <input type="number" value={precioTotal} onChange={e => setPrecioTotal(e.target.value)} placeholder="Automático según duración" />

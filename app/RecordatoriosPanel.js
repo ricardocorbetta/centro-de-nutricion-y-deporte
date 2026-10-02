@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import LoadingSkeleton from './LoadingSkeleton';
+import PedirContactoModal from './PedirContactoModal';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 function addDaysISO(iso, n) {
@@ -25,6 +26,7 @@ export default function RecordatoriosPanel({ empresaNombre }) {
   const [turnos, setTurnos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [pidiendoContacto, setPidiendoContacto] = useState(null);
 
   const desde = todayISO();
   const hasta = addDaysISO(desde, dias - 1);
@@ -67,15 +69,20 @@ export default function RecordatoriosPanel({ empresaNombre }) {
     } catch (e) { /* mejor esfuerzo: si falla, el próximo refresco lo corrige */ }
   }
 
-  function enviar(turno) {
-    const nombre = turno.paciente_nombre || window.prompt('Nombre del paciente para el recordatorio:') || '';
-    const telefono = turno.paciente_telefono || window.prompt('Teléfono (con código de país, ej: 5492995551234):') || '';
+  function abrirWhatsApp(turno, nombre, telefono) {
     const texto = `Hola ${nombre}! Te recordamos tu turno en ${empresaNombre || 'el centro'} el ${turno.day} a las ${turno.time} con ${turno.resource} (${turno.service}). Cualquier cambio avisanos por este medio. ¡Te esperamos!`;
     const url = telefono
       ? `https://wa.me/${telefono.replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`
       : `https://wa.me/?text=${encodeURIComponent(texto)}`;
     window.open(url, '_blank');
-    marcarEnviado(turno, true);
+  }
+
+  function enviar(turno) {
+    if (turno.paciente_nombre || turno.paciente_telefono) {
+      abrirWhatsApp(turno, turno.paciente_nombre || '', turno.paciente_telefono || '');
+    } else {
+      setPidiendoContacto({ onConfirm: (nombre, telefono) => abrirWhatsApp(turno, nombre, telefono) });
+    }
   }
 
   return (
@@ -90,8 +97,8 @@ export default function RecordatoriosPanel({ empresaNombre }) {
         </select>
       </div>
       <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: -8, marginBottom: 16 }}>
-        Mandá los recordatorios de WhatsApp del día de una sola pasada. Se abre el chat con el mensaje ya armado;
-        al enviarlo queda marcado acá para no mandarlo dos veces ni olvidarse de nadie.
+        Mandá los recordatorios de WhatsApp del día de una sola pasada: "WhatsApp" abre el chat con el mensaje ya armado,
+        y "Marcar enviado" lo deja registrado acá recién después de que lo mandaste de verdad.
       </p>
 
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
@@ -128,8 +135,10 @@ export default function RecordatoriosPanel({ empresaNombre }) {
                       </td>
                       <td style={{ display: 'flex', gap: 6 }}>
                         <button className="icon-btn wa" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => enviar(t)}>WhatsApp</button>
-                        {t.recordatorio_enviado_at && (
+                        {t.recordatorio_enviado_at ? (
                           <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => marcarEnviado(t, false)}>Deshacer</button>
+                        ) : (
+                          <button className="icon-btn" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => marcarEnviado(t, true)}>Marcar enviado</button>
                         )}
                       </td>
                     </tr>
@@ -140,6 +149,8 @@ export default function RecordatoriosPanel({ empresaNombre }) {
           ))}
         </>
       )}
+
+      <PedirContactoModal data={pidiendoContacto} onClose={() => setPidiendoContacto(null)} />
     </>
   );
 }

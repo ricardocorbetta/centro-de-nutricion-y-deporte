@@ -383,6 +383,15 @@ function AccesoPortal({ pacienteId, empresaSlug, pacienteNombre, pacienteTelefon
   const [generando, setGenerando] = useState(false);
   const [credenciales, setCredenciales] = useState(null); // { username, password } recién generadas
   const [errorMsg, setErrorMsg] = useState('');
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiarCredenciales() {
+    try {
+      await navigator.clipboard.writeText(`Usuario: ${credenciales.username} · Clave: ${credenciales.password}`);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch (e) {}
+  }
 
   async function cargar() {
     setLoading(true);
@@ -447,12 +456,15 @@ function AccesoPortal({ pacienteId, empresaSlug, pacienteNombre, pacienteTelefon
           ) : (
             <div style={{ background: 'var(--surface-alt)', borderRadius: 8, padding: '10px 12px', fontSize: 12.5 }}>
               <div style={{ marginBottom: 6 }}>Usuario: <b style={{ fontFamily: 'var(--mono)' }}>{credenciales.username}</b> · Clave: <b style={{ fontFamily: 'var(--mono)' }}>{credenciales.password}</b></div>
-              <div style={{ color: 'var(--ink-faint)', marginBottom: 8 }}>Guardala ahora — no se vuelve a mostrar. Pasásela al paciente por WhatsApp:</div>
-              {telWhatsapp ? (
-                <a className="icon-btn primary" href={`https://wa.me/${telWhatsapp}?text=${mensajeWhatsapp}`} target="_blank" rel="noreferrer">Enviar por WhatsApp</a>
-              ) : (
-                <span style={{ color: 'var(--ink-faint)' }}>Este paciente no tiene teléfono cargado — copiá usuario y clave manualmente.</span>
-              )}
+              <div style={{ color: 'var(--ink-faint)', marginBottom: 8 }}>Guardala ahora — no se vuelve a mostrar. Copiala o pasásela al paciente por WhatsApp:</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="icon-btn" onClick={copiarCredenciales}>{copiado ? 'Copiado ✓' : 'Copiar usuario y clave'}</button>
+                {telWhatsapp ? (
+                  <a className="icon-btn primary" href={`https://wa.me/${telWhatsapp}?text=${mensajeWhatsapp}`} target="_blank" rel="noreferrer">Enviar por WhatsApp</a>
+                ) : (
+                  <span style={{ color: 'var(--ink-faint)', alignSelf: 'center' }}>Este paciente no tiene teléfono cargado.</span>
+                )}
+              </div>
             </div>
           )}
         </div>

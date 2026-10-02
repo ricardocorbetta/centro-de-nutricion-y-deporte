@@ -103,6 +103,8 @@ function ProfesionalDetalle({ profesional: p, onChange }) {
 
 function HorariosSemanales({ profesional, horarios, onChange }) {
   const [nuevo, setNuevo] = useState({}); // { [dia]: {horaInicio, horaFin} } mientras se edita un día sin horario
+  const [confirmando, setConfirmando] = useState(null);
+  const [guardadoOk, setGuardadoOk] = useState(null);
 
   async function guardarNuevo(dia) {
     const v = nuevo[dia];
@@ -120,11 +122,19 @@ function HorariosSemanales({ profesional, horarios, onChange }) {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch)
     });
     onChange();
+    setGuardadoOk(id);
+    setTimeout(() => setGuardadoOk(prev => (prev === id ? null : prev)), 1800);
   }
 
-  async function borrar(id) {
-    await fetch(`/api/admin/horarios/${id}`, { method: 'DELETE' });
-    onChange();
+  function borrar(id, dia) {
+    setConfirmando({
+      mensaje: `¿Quitar el horario del ${DIAS[dia]}? Ese día deja de estar disponible para reservar turnos online.`,
+      destructivo: true, textoConfirmar: 'Quitar',
+      onConfirm: async () => {
+        await fetch(`/api/admin/horarios/${id}`, { method: 'DELETE' });
+        onChange();
+      }
+    });
   }
 
   return (
@@ -139,13 +149,14 @@ function HorariosSemanales({ profesional, horarios, onChange }) {
                 <th style={{ width: 90 }}>{DIAS[dia]}</th>
                 {h ? (
                   <>
-                    <td>
+                    <td style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input type="time" defaultValue={h.hora_inicio} style={{ width: 90 }}
                         onBlur={e => actualizar(h.id, { horaInicio: e.target.value })} /> a{' '}
                       <input type="time" defaultValue={h.hora_fin} style={{ width: 90 }}
                         onBlur={e => actualizar(h.id, { horaFin: e.target.value })} />
+                      {guardadoOk === h.id && <span style={{ fontSize: 11.5, color: 'var(--sage)' }}>Guardado ✓</span>}
                     </td>
-                    <td><button className="icon-btn" onClick={() => borrar(h.id)}>Quitar</button></td>
+                    <td><button className="icon-btn" onClick={() => borrar(h.id, dia)}>Quitar</button></td>
                   </>
                 ) : (
                   <>
@@ -155,7 +166,7 @@ function HorariosSemanales({ profesional, horarios, onChange }) {
                       <input type="time" style={{ width: 90 }}
                         onChange={e => setNuevo(n => ({ ...n, [dia]: { ...n[dia], horaFin: e.target.value } }))} />
                     </td>
-                    <td><button className="icon-btn" onClick={() => guardarNuevo(dia)}>No atiende — agregar</button></td>
+                    <td><button className="icon-btn" onClick={() => guardarNuevo(dia)}>+ Agregar horario</button></td>
                   </>
                 )}
               </tr>
@@ -163,6 +174,7 @@ function HorariosSemanales({ profesional, horarios, onChange }) {
           })}
         </tbody>
       </table>
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </div>
   );
 }
@@ -172,6 +184,7 @@ function ExcepcionesPuntuales({ profesional, excepciones, onChange }) {
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFin, setHoraFin] = useState('');
   const [cerrado, setCerrado] = useState(false);
+  const [confirmando, setConfirmando] = useState(null);
 
   async function agregar() {
     if (!fecha) return;
@@ -184,9 +197,15 @@ function ExcepcionesPuntuales({ profesional, excepciones, onChange }) {
     onChange();
   }
 
-  async function borrar(id) {
-    await fetch(`/api/admin/horarios/${id}`, { method: 'DELETE' });
-    onChange();
+  function borrar(id, fecha) {
+    setConfirmando({
+      mensaje: `¿Quitar la excepción del ${fecha}? Ese día vuelve a usar el horario semanal habitual.`,
+      destructivo: true, textoConfirmar: 'Quitar',
+      onConfirm: async () => {
+        await fetch(`/api/admin/horarios/${id}`, { method: 'DELETE' });
+        onChange();
+      }
+    });
   }
 
   return (
@@ -201,7 +220,7 @@ function ExcepcionesPuntuales({ profesional, excepciones, onChange }) {
             <tr key={e.id}>
               <td>{e.fecha}</td>
               <td>{e.activo ? `${e.hora_inicio} a ${e.hora_fin}` : <span className="tag rust">no atiende</span>}</td>
-              <td><button className="icon-btn" onClick={() => borrar(e.id)}>Quitar</button></td>
+              <td><button className="icon-btn" onClick={() => borrar(e.id, e.fecha)}>Quitar</button></td>
             </tr>
           ))}
           {!excepciones.length && <tr><td colSpan={3} style={{ color: 'var(--ink-faint)' }}>Sin excepciones cargadas.</td></tr>}
@@ -220,6 +239,7 @@ function ExcepcionesPuntuales({ profesional, excepciones, onChange }) {
         )}
         <button className="icon-btn primary" onClick={agregar}>Agregar excepción</button>
       </div>
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </div>
   );
 }
@@ -228,6 +248,7 @@ function Servicios({ profesional, servicios, onChange }) {
   const [nombre, setNombre] = useState('');
   const [duracion, setDuracion] = useState('40');
   const [confirmando, setConfirmando] = useState(null);
+  const [guardadoOk, setGuardadoOk] = useState(null);
 
   async function agregar() {
     if (!nombre.trim()) return;
@@ -244,6 +265,8 @@ function Servicios({ profesional, servicios, onChange }) {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch)
     });
     onChange();
+    setGuardadoOk(id);
+    setTimeout(() => setGuardadoOk(prev => (prev === id ? null : prev)), 1800);
   }
 
   function borrar(id) {
@@ -266,7 +289,8 @@ function Servicios({ profesional, servicios, onChange }) {
             <tr key={s.id}>
               <td><input defaultValue={s.nombre} onBlur={e => actualizar(s.id, { nombre: e.target.value })} /></td>
               <td><input type="number" step="5" style={{ width: 70 }} defaultValue={s.duracion}
-                onBlur={e => actualizar(s.id, { duracion: e.target.value })} /> min</td>
+                onBlur={e => actualizar(s.id, { duracion: e.target.value })} /> min
+                {guardadoOk === s.id && <span style={{ fontSize: 11.5, color: 'var(--sage)', marginLeft: 8 }}>Guardado ✓</span>}</td>
               <td><input type="checkbox" checked={s.activo} onChange={e => actualizar(s.id, { activo: e.target.checked })} /></td>
               <td><button className="icon-btn" onClick={() => borrar(s.id)}>Quitar</button></td>
             </tr>

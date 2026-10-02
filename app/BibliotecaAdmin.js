@@ -103,7 +103,7 @@ export default function BibliotecaAdmin({ empresaSlug }) {
                 </td>
                 <td style={{ display: 'flex', gap: 6 }}>
                   <button className="icon-btn" onClick={() => toggleActivo(c)}>{c.activo ? 'Ocultar' : 'Publicar'}</button>
-                  <button className="icon-btn" onClick={() => borrar(c)}>Borrar</button>
+                  <button className="icon-btn destructivo" onClick={() => borrar(c)}>Borrar</button>
                 </td>
               </tr>
             ))}

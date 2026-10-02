@@ -194,6 +194,7 @@ function DirectorApp({ name, username, empresa }) {
       }
       setCurrentMonth(key);
       setUploadStatus({ msg: `Período ${key} cargado (${events.length} turnos).`, err: false });
+      setTimeout(() => setShowUpload(false), 1400);
     } catch (err) {
       setUploadStatus({ msg: 'Error al procesar: ' + err.message, err: true });
     }
@@ -216,6 +217,7 @@ function DirectorApp({ name, username, empresa }) {
       });
       setCurrentMonth(monthKey);
       setUploadStatus({ msg: `Período ${monthKey} cargado manualmente.`, err: false });
+      setTimeout(() => setShowUpload(false), 1400);
     } catch (err) {
       setUploadStatus({ msg: 'Error al guardar: ' + err.message, err: true });
     }
@@ -300,8 +302,10 @@ function Dashboard({
           <select className="pill-select" value={currentMonth || ''} onChange={e => setCurrentMonth(e.target.value)}>
             {periods.map(p => <option key={p.month_key} value={p.month_key}>{p.month_key}{p.is_manual ? ' (manual)' : ''}</option>)}
           </select>
-          <button className="icon-btn" onClick={() => setShowConfig(v => !v)}>⚙ Configurar</button>
-          <button className="icon-btn primary" onClick={() => setShowUpload(v => !v)}>+ Cargar período</button>
+          <button className={'icon-btn' + (showConfig ? ' active' : '')} onClick={() => setShowConfig(v => !v)}>⚙ Configurar</button>
+          <button className={showUpload ? 'icon-btn active' : 'icon-btn primary'} onClick={() => setShowUpload(v => !v)}>
+            {showUpload ? '✕ Cerrar carga' : '+ Cargar período'}
+          </button>
           <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginLeft: 4 }}>{name}</span>
           <button className="icon-btn" onClick={onLogout}>Salir</button>
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
 import LoadingSkeleton from './LoadingSkeleton';
+import ConfirmModal from './ConfirmModal';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -113,6 +114,8 @@ export default function CajaComisionesSection() {
   const [fechaDia, setFechaDia] = useState(todayISO());
   const [cierreDia, setCierreDia] = useState(null);
   const [cerrando, setCerrando] = useState(false);
+  const [confirmando, setConfirmando] = useState(null);
+  const [pctGuardadoOk, setPctGuardadoOk] = useState(null);
   const [resumen, setResumen] = useState(null);
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -227,7 +230,25 @@ export default function CajaComisionesSection() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profesional, pctProfesional: pct })
       });
+      setPctGuardadoOk(profesional);
+      setTimeout(() => setPctGuardadoOk(prev => (prev === profesional ? null : prev)), 1800);
     } catch (e) {}
+  }
+
+  function pedirCerrarCaja() {
+    setConfirmando({
+      mensaje: `¿Cerrar la caja del ${fmtFechaLarga(fechaDia)}? Queda un resumen fijo del día (${resumen?.cantidadCobros || 0} cobro(s) por ${fmtMoney(resumen?.totalCobrado || 0)}). Podés reabrirla después si hace falta.`,
+      textoConfirmar: 'Cerrar caja',
+      onConfirm: cerrarCaja
+    });
+  }
+
+  function pedirReabrirCaja() {
+    setConfirmando({
+      mensaje: `¿Reabrir la caja del ${fmtFechaLarga(fechaDia)}? El resumen cerrado se borra; se vuelve a calcular en vivo a partir de los cobros.`,
+      destructivo: true, textoConfirmar: 'Reabrir',
+      onConfirm: reabrirCaja
+    });
   }
 
   const defaultPct = config.find(c => c.profesional === '__default__')?.pct_profesional ?? 60;
@@ -295,7 +316,7 @@ export default function CajaComisionesSection() {
                 </div>
               </div>
               <button className="icon-btn" onClick={() => imprimirCierre({ fecha: fechaDia, resumen, cerradoPor: cierreDia.cerrado_por, cerradoEn: cierreDia.cerrado_en })}>Imprimir cierre</button>
-              <button className="icon-btn" disabled={cerrando} onClick={reabrirCaja}>{cerrando ? 'Reabriendo…' : 'Reabrir'}</button>
+              <button className="icon-btn" disabled={cerrando} onClick={pedirReabrirCaja}>{cerrando ? 'Reabriendo…' : 'Reabrir'}</button>
             </>
           ) : (
             <>
@@ -306,7 +327,7 @@ export default function CajaComisionesSection() {
                   {resumen.cantidadCobros} cobro(s) por {fmtMoney(resumen.totalCobrado)} hasta ahora. Cerrala cuando termine el día.
                 </div>
               </div>
-              <button className="icon-btn primary" disabled={cerrando} onClick={cerrarCaja}>{cerrando ? 'Cerrando…' : 'Cerrar caja del día'}</button>
+              <button className="icon-btn primary" disabled={cerrando} onClick={pedirCerrarCaja}>{cerrando ? 'Cerrando…' : 'Cerrar caja del día'}</button>
             </>
           )}
         </div>
@@ -388,28 +409,39 @@ export default function CajaComisionesSection() {
         <tbody>
           <tr>
             <td><i>Por defecto (todos los que no tengan un % propio)</i></td>
-            <td><input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={defaultPct}
-              onBlur={e => savePct('__default__', parseFloat(e.target.value) || 0)} /></td>
+            <td style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={defaultPct}
+                onBlur={e => savePct('__default__', parseFloat(e.target.value) || 0)} />
+              {pctGuardadoOk === '__default__' && <span style={{ fontSize: 11.5, color: 'var(--sage)' }}>Guardado ✓</span>}
+            </td>
             <td>{100 - defaultPct}%</td>
           </tr>
           {config.filter(c => c.profesional !== '__default__').map(c => (
             <tr key={c.profesional}>
               <td>{c.profesional}</td>
-              <td><input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={c.pct_profesional}
-                onBlur={e => savePct(c.profesional, parseFloat(e.target.value) || 0)} /></td>
+              <td style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={c.pct_profesional}
+                  onBlur={e => savePct(c.profesional, parseFloat(e.target.value) || 0)} />
+                {pctGuardadoOk === c.profesional && <span style={{ fontSize: 11.5, color: 'var(--sage)' }}>Guardado ✓</span>}
+              </td>
               <td>{100 - c.pct_profesional}%</td>
             </tr>
           ))}
           {profesionalRows.filter(([name]) => !config.some(c => c.profesional === name)).map(([name]) => (
             <tr key={name}>
               <td>{name}</td>
-              <td><input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={defaultPct}
-                onBlur={e => savePct(name, parseFloat(e.target.value) || 0)} /></td>
+              <td style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="number" min="0" max="100" style={{ width: 70 }} defaultValue={defaultPct}
+                  onBlur={e => savePct(name, parseFloat(e.target.value) || 0)} />
+                {pctGuardadoOk === name && <span style={{ fontSize: 11.5, color: 'var(--sage)' }}>Guardado ✓</span>}
+              </td>
               <td>—</td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </>
   );
 }

@@ -90,23 +90,23 @@ export default function CarteleraAdmin({ empresaSlug }) {
 
       {loading ? <LoadingSkeleton lines={4} /> : (
         <table className="plain">
-          <thead><tr><th>Fecha</th><th>Tipo</th><th>Título</th><th></th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Título</th><th></th></tr></thead>
           <tbody>
             {cartelera.map(c => (
               <tr key={c.id} style={{ opacity: c.activo ? 1 : 0.5 }}>
                 <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{c.fecha}</td>
                 <td><span className="tag">{TIPO_LABEL[c.tipo] || c.tipo}</span></td>
                 <td style={{ fontWeight: 600 }}>{c.titulo}{c.destacar ? ' ⭐' : ''}</td>
-                <td><button className="icon-btn" onClick={() => toggleDestacar(c)}>{c.destacar ? 'Quitar destacado' : 'Destacar'}</button></td>
-                <td style={{ display: 'flex', gap: 6 }}>
+                <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button className="icon-btn" onClick={() => toggleDestacar(c)}>{c.destacar ? 'Quitar destacado' : 'Destacar'}</button>
                   <button className="icon-btn" onClick={() => setEditando(c)}>Editar</button>
                   <button className="icon-btn" onClick={() => toggleActivo(c)}>{c.activo ? 'Ocultar' : 'Publicar'}</button>
-                  <button className="icon-btn" onClick={() => borrar(c)}>Borrar</button>
+                  <button className="icon-btn destructivo" onClick={() => borrar(c)}>Borrar</button>
                 </td>
               </tr>
             ))}
             {!cartelera.length && (
-              <tr><td colSpan={5}>
+              <tr><td colSpan={4}>
                 <div className="empty-state">
                   <span className="icon">📣</span>
                   <span className="title">Todavía no hay nada publicado</span>

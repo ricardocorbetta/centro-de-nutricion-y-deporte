@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
 import LoadingSkeleton from './LoadingSkeleton';
 import CobroTurnoModal from './CobroTurnoModal';
+import PedirContactoModal from './PedirContactoModal';
+import ConfirmModal from './ConfirmModal';
 
 const DOW_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -63,6 +65,8 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [cobrandoTurno, setCobrandoTurno] = useState(null);
   const [diaSeleccionado, setDiaSeleccionado] = useState(todayISO());
+  const [confirmando, setConfirmando] = useState(null);
+  const [pidiendoContacto, setPidiendoContacto] = useState(null);
 
   const monday = useMemo(() => mondayOf(anchor), [anchor]);
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(monday, i)), [monday]);
@@ -101,8 +105,7 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
     return m;
   }, [turnos, dias]);
 
-  async function cambiarEstado(turno, status) {
-    if (!turno.id) return;
+  async function aplicarEstado(turno, status) {
     try {
       const res = await fetch(`/api/turnos/${turno.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
@@ -115,9 +118,37 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
     }
   }
 
+  // Cancelar un turno (o revertir una cancelación, que vuelve a ocupar el horario) se confirma
+  // siempre, acá y en AgendaLista — son los dos únicos cambios de estado con consecuencias
+  // difíciles de deshacer a simple vista.
+  function cambiarEstado(turno, status) {
+    if (!turno.id) return;
+    if (status === 'cancelled') {
+      setConfirmando({
+        mensaje: `¿Cancelar el turno de ${turno.paciente_nombre || 'este paciente'} (${turno.day} ${turno.time})?`,
+        destructivo: true, textoConfirmar: 'Cancelar turno',
+        onConfirm: () => aplicarEstado(turno, status)
+      });
+    } else if (turno.status === 'cancelled') {
+      setConfirmando({
+        mensaje: `¿Reactivar este turno cancelado para ${turno.day} ${turno.time}? Vuelve a ocupar ese horario.`,
+        textoConfirmar: 'Reactivar',
+        onConfirm: () => aplicarEstado(turno, status)
+      });
+    } else {
+      aplicarEstado(turno, status);
+    }
+  }
+
   function abrirRecordatorio(turno) {
-    const nombre = turno.paciente_nombre || window.prompt('Nombre del paciente para el recordatorio:') || '';
-    const telefono = turno.paciente_telefono || window.prompt('Teléfono (con código de país, ej: 5492995551234):') || '';
+    if (turno.paciente_nombre || turno.paciente_telefono) {
+      enviarWhatsApp(turno, turno.paciente_nombre || '', turno.paciente_telefono || '');
+    } else {
+      setPidiendoContacto({ onConfirm: (nombre, telefono) => enviarWhatsApp(turno, nombre, telefono) });
+    }
+  }
+
+  function enviarWhatsApp(turno, nombre, telefono) {
     const texto = `Hola ${nombre}! Te recordamos tu turno en ${empresaNombre || 'el centro'} el ${turno.day} a las ${turno.time} con ${turno.resource} (${turno.service}). Cualquier cambio avisanos por este medio. ¡Te esperamos!`;
     const url = telefono
       ? `https://wa.me/${telefono.replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`
@@ -198,6 +229,8 @@ export default function AgendaSemana({ empresaNombre, onNuevoEnDia }) {
       </div>
 
       <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={cargar} />
+      <PedirContactoModal data={pidiendoContacto} onClose={() => setPidiendoContacto(null)} />
+      <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
     </>
   );
 }

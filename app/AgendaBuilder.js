@@ -7,6 +7,7 @@ import AgendaSemana from './AgendaSemana';
 import AgendaCrearTurnoModal from './AgendaCrearTurnoModal';
 import ConfirmModal from './ConfirmModal';
 import CobroTurnoModal from './CobroTurnoModal';
+import PedirContactoModal from './PedirContactoModal';
 
 const STEP_MIN = 10;
 
@@ -47,6 +48,7 @@ export default function AgendaBuilder({ empresaSlug }) {
   const [modalInitial, setModalInitial] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
   const [cobrandoTurno, setCobrandoTurno] = useState(null);
+  const [pidiendoContacto, setPidiendoContacto] = useState(null);
 
   async function cargarProfesionales(f) {
     if (!empresaSlug) return;
@@ -78,8 +80,7 @@ export default function AgendaBuilder({ empresaSlug }) {
 
   useEffect(() => { cargarProfesionales(fecha); cargarTurnos(fecha); }, [fecha]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function cambiarEstado(turno, status) {
-    if (!turno.id) return;
+  async function aplicarEstado(turno, status) {
     try {
       const res = await fetch(`/api/turnos/${turno.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
@@ -92,9 +93,36 @@ export default function AgendaBuilder({ empresaSlug }) {
     }
   }
 
+  // Cancelar (o revertir una cancelación) siempre se confirma, sea cual sea la vista desde la
+  // que se dispare (Lista, Grilla o Semana comparten esta misma función).
+  function cambiarEstado(turno, status) {
+    if (!turno.id) return;
+    if (status === 'cancelled') {
+      setConfirmando({
+        mensaje: `¿Cancelar el turno de ${turno.paciente_nombre || 'este paciente'} (${turno.day || fecha} ${turno.time})?`,
+        destructivo: true, textoConfirmar: 'Cancelar turno',
+        onConfirm: () => aplicarEstado(turno, status)
+      });
+    } else if (turno.status === 'cancelled') {
+      setConfirmando({
+        mensaje: `¿Reactivar este turno cancelado para las ${turno.time}? Vuelve a ocupar ese horario.`,
+        textoConfirmar: 'Reactivar',
+        onConfirm: () => aplicarEstado(turno, status)
+      });
+    } else {
+      aplicarEstado(turno, status);
+    }
+  }
+
   function abrirRecordatorio(turno) {
-    const nombre = turno.paciente_nombre || window.prompt('Nombre del paciente para el recordatorio:') || '';
-    const telefono = turno.paciente_telefono || window.prompt('Teléfono (con código de país, ej: 5492995551234):') || '';
+    if (turno.paciente_nombre || turno.paciente_telefono) {
+      enviarWhatsApp(turno, turno.paciente_nombre || '', turno.paciente_telefono || '');
+    } else {
+      setPidiendoContacto({ onConfirm: (nombre, telefono) => enviarWhatsApp(turno, nombre, telefono) });
+    }
+  }
+
+  function enviarWhatsApp(turno, nombre, telefono) {
     const texto = `Hola ${nombre}! Te recordamos tu turno en ${empresaNombre || 'el centro'} el ${turno.day} a las ${turno.time} con ${turno.resource} (${turno.service}). Cualquier cambio avisanos por este medio. ¡Te esperamos!`;
     const url = telefono
       ? `https://wa.me/${telefono.replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`
@@ -291,10 +319,7 @@ export default function AgendaBuilder({ empresaSlug }) {
                                   <button className="icon-btn primary" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => abrirCobro(turno)}>Cobrar</button>
                                   <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => abrirRecordatorio(turno)}>WhatsApp</button>
                                   {turno.status !== 'cumplido' && <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => cambiarEstado(turno, 'cumplido')}>Atendido</button>}
-                                  <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => setConfirmando({
-                                    mensaje: '¿Cancelar este turno?', destructivo: true, textoConfirmar: 'Cancelar turno',
-                                    onConfirm: () => cambiarEstado(turno, 'cancelled')
-                                  })}>Cancelar</button>
+                                  <button className="icon-btn" style={{ padding: '5px 9px', fontSize: 11.5, minHeight: 'unset' }} onClick={() => cambiarEstado(turno, 'cancelled')}>Cancelar</button>
                                 </div>
                               )}
                               {!turno.id && (
@@ -304,12 +329,14 @@ export default function AgendaBuilder({ empresaSlug }) {
                           );
                         }
                         return (
-                          <td key={p.nombre} style={{ padding: 0, border: '1px solid var(--border-strong)', height: 26 }}>
+                          <td key={p.nombre} style={{ padding: 0, border: '1px solid var(--border-strong)', height: 30 }}>
                             {dentroHorario && (
                               <button
                                 onClick={() => abrirModal({ fecha, hora, profesional: p.nombre })}
-                                style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 13 }}
+                                style={{ width: '100%', height: '100%', minHeight: 30, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ink-faint)', fontSize: 16, fontWeight: 600 }}
                                 title={`Agendar con ${p.nombre} a las ${hora}`}
+                                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-alt)'}
+                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                               >+</button>
                             )}
                           </td>
@@ -330,6 +357,7 @@ export default function AgendaBuilder({ empresaSlug }) {
         empresaSlug={empresaSlug}
       />
       <ConfirmModal data={confirmando} onClose={() => setConfirmando(null)} />
+      <PedirContactoModal data={pidiendoContacto} onClose={() => setPidiendoContacto(null)} />
       <CobroTurnoModal turno={cobrandoTurno} onClose={() => setCobrandoTurno(null)} onChanged={() => cargarTurnos(fecha)} />
     </>
   );
