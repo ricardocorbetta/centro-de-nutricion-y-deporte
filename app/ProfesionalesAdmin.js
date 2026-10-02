@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
+import Avatar from './Avatar';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DIA_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Lunes primero, Domingo al final
@@ -69,15 +70,13 @@ export default function ProfesionalesAdmin() {
       {loading ? <LoadingSkeleton lines={3} widths={['100%', '100%', '70%']} /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {profesionales.map(p => (
-            <div key={p.nombre} style={{ border: '1px solid var(--border-strong)', borderRadius: 10, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-alt)' }}>
-                <button className="icon-btn" style={{ padding: '2px 8px' }}
-                  onClick={() => setAbierto(abierto === p.nombre ? null : p.nombre)}>
-                  {abierto === p.nombre ? '▾' : '▸'}
-                </button>
-                <div style={{ flex: 1, fontWeight: 700, fontSize: 13, opacity: p.activo ? 1 : 0.5 }}>{p.nombre}</div>
+            <div key={p.nombre} className={'prof-card' + (abierto === p.nombre ? ' abierto' : '')}>
+              <div className="prof-card-head" onClick={() => setAbierto(abierto === p.nombre ? null : p.nombre)}>
+                <span className="chev">{abierto === p.nombre ? '▾' : '▸'}</span>
+                <Avatar nombre={p.nombre} size={28} />
+                <div className="nombre" style={{ opacity: p.activo ? 1 : 0.5 }}>{p.nombre}</div>
                 {!p.activo && <span className="tag rust">inactivo</span>}
-                <button className="icon-btn" onClick={() => toggleActivo(p.nombre, !p.activo)}>
+                <button className="icon-btn" onClick={e => { e.stopPropagation(); toggleActivo(p.nombre, !p.activo); }}>
                   {p.activo ? 'Desactivar' : 'Reactivar'}
                 </button>
               </div>

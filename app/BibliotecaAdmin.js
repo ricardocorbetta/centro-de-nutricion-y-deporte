@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
+import Avatar from './Avatar';
+
+const TIPO_TAG_CLASS = { receta: 'sage', pauta_general: 'rust' };
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -93,10 +96,15 @@ export default function BibliotecaAdmin({ empresaSlug }) {
             {contenido.map(c => (
               <tr key={c.id} style={{ opacity: c.activo ? 1 : 0.5 }}>
                 <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{c.fecha}</td>
-                <td><span className="tag">{TIPO_LABEL[c.tipo] || c.tipo}</span></td>
+                <td><span className={'tag' + (TIPO_TAG_CLASS[c.tipo] ? ' ' + TIPO_TAG_CLASS[c.tipo] : '')}>{TIPO_LABEL[c.tipo] || c.tipo}</span></td>
                 <td style={{ fontWeight: 600 }}>{c.titulo}</td>
-                <td>{c.profesional}</td>
-                <td style={{ fontSize: 12.5 }}>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Avatar nombre={c.profesional} size={22} />
+                    {c.profesional}
+                  </div>
+                </td>
+                <td style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>
                   {c.visibilidad === 'propios' && 'Pacientes del profesional'}
                   {c.visibilidad === 'todos_cnd' && 'Todos CND'}
                   {c.visibilidad === 'especificos' && `${c.pacientesIds?.length || 0} paciente(s)`}

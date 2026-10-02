@@ -6,6 +6,7 @@ import { LOGO_DATA_URI } from '../lib/logo';
 import { fmtMoney } from '../lib/stats';
 import AgendaBuilder from './AgendaBuilder';
 import PacienteSelector from './PacienteSelector';
+import Avatar from './Avatar';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -122,7 +123,7 @@ export default function SecretariaView({ name, username, empresa }) {
             </div>
           </div>
           <div className="topbar-spacer" />
-          <span style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{name}</span>
+          <span className="user-chip"><Avatar nombre={name} size={26} /><span className="nombre">{name}</span></span>
           <button className="icon-btn" onClick={handleLogout}>Salir</button>
         </div>
       </div>
@@ -172,7 +173,14 @@ export default function SecretariaView({ name, username, empresa }) {
                   {cobros.map(c => (
                     <tr key={c.id}>
                       <td>{new Date(c.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td>{c.paciente_nombre || '-'}</td>
+                      <td>
+                        {c.paciente_nombre ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Avatar nombre={c.paciente_nombre} size={22} />
+                            {c.paciente_nombre}
+                          </div>
+                        ) : '-'}
+                      </td>
                       <td>{c.profesional}</td>
                       <td>{fmtMoney(c.monto)}</td>
                       <td>{c.medio_pago}</td>

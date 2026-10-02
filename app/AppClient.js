@@ -21,6 +21,7 @@ import PacientesPanel from './PacientesPanel';
 import BibliotecaAdmin from './BibliotecaAdmin';
 import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
+import Avatar from './Avatar';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
   if (esAdminPlataforma) return <XenomAdmin name={name} username={username} />;
@@ -306,7 +307,7 @@ function Dashboard({
           <button className={showUpload ? 'icon-btn active' : 'icon-btn primary'} onClick={() => setShowUpload(v => !v)}>
             {showUpload ? '✕ Cerrar carga' : '+ Cargar período'}
           </button>
-          <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginLeft: 4 }}>{name}</span>
+          <span className="user-chip"><Avatar nombre={name} size={26} /><span className="nombre">{name}</span></span>
           <button className="icon-btn" onClick={onLogout}>Salir</button>
         </div>
       </div>
