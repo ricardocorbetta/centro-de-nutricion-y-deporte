@@ -18,6 +18,7 @@ import RecordatoriosPanel from './RecordatoriosPanel';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import MercadoPagoConfig from './MercadoPagoConfig';
 import PacientesPanel from './PacientesPanel';
+import CuestionariosAdmin from './CuestionariosAdmin';
 import BibliotecaAdmin from './BibliotecaAdmin';
 import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
@@ -267,6 +268,7 @@ function Dashboard({
       { id: 'agenda-director', label: 'Agenda', icon: '📅' },
       { id: 'recordatorios', label: 'Recordatorios', icon: '💬' },
       { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
+      { id: 'cuestionarios', label: 'Cuestionarios', icon: '📋' },
       { id: 'biblioteca', label: 'Biblioteca', icon: '📚' },
       { id: 'cartelera', label: 'Cartelera', icon: '📣' },
       { id: 'caja', label: 'Caja', icon: '💵' },
@@ -363,6 +365,10 @@ function Dashboard({
             <section><div className="card">
               <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} empresaSlug={empresa?.slug} />
             </div></section>
+          )}
+
+          {activeSection === 'cuestionarios' && (
+            <section><div className="card"><CuestionariosAdmin empresaSlug={empresa?.slug} /></div></section>
           )}
 
           {activeSection === 'biblioteca' && (

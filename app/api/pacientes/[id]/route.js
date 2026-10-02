@@ -12,14 +12,18 @@ export async function GET(request, { params }) {
   try {
     const { id } = params;
     const sb = supabaseAdmin();
-    const [{ data: paciente, error: e1 }, { data: turnos }, { data: cobros }, { data: entrevistas }] = await Promise.all([
+    const [{ data: paciente, error: e1 }, { data: turnos }, { data: cobros }, { data: respuestasCuestionarios }] = await Promise.all([
       sb.from('pacientes').select('*').eq('id', id).eq('empresa_id', session.empresaId).single(),
       sb.from('turnos_propios').select('*').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('day', { ascending: false }),
       sb.from('cobros').select('*').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('fecha', { ascending: false }),
-      sb.from('entrevistas_prefiltro').select('*').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('created_at', { ascending: false })
+      sb.from('cuestionario_respuestas').select('*, cuestionarios(nombre, slug, campos)').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('created_at', { ascending: false })
     ]);
     if (e1 || !paciente) return NextResponse.json({ error: 'Paciente no encontrado.' }, { status: 404 });
-    return NextResponse.json({ paciente, turnos: turnos || [], cobros: cobros || [], entrevistas: entrevistas || [] });
+    const cuestionarios = (respuestasCuestionarios || []).map(r => ({
+      id: r.id, created_at: r.created_at, respuestas: r.respuestas,
+      cuestionario_nombre: r.cuestionarios?.nombre || null, cuestionario_campos: r.cuestionarios?.campos || []
+    }));
+    return NextResponse.json({ paciente, turnos: turnos || [], cobros: cobros || [], cuestionarios });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }

@@ -39,24 +39,25 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [seleccionado, setSeleccionado] = useState(null); // id del paciente abierto
   const [creando, setCreando] = useState(false);
-  const [entrevistas, setEntrevistas] = useState([]);
+  const [respuestasNuevas, setRespuestasNuevas] = useState([]);
+  const [viendoRespuesta, setViendoRespuesta] = useState(null);
 
-  async function cargarEntrevistas() {
+  async function cargarRespuestasNuevas() {
     try {
-      const res = await fetch('/api/prefiltro?sinRevisar=1');
+      const res = await fetch('/api/cuestionarios/respuestas?sinRevisar=1');
       const data = await res.json();
-      if (!data.error) setEntrevistas(data.entrevistas || []);
+      if (!data.error) setRespuestasNuevas(data.respuestas || []);
     } catch (e) {}
   }
 
   async function marcarRevisada(id) {
     try {
-      await fetch(`/api/prefiltro/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revisado: true }) });
-      setEntrevistas(prev => prev.filter(e => e.id !== id));
+      await fetch(`/api/cuestionarios/respuestas?id=${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revisado: true }) });
+      setRespuestasNuevas(prev => prev.filter(r => r.id !== id));
     } catch (e) {}
   }
 
-  useEffect(() => { cargarEntrevistas(); }, []);
+  useEffect(() => { cargarRespuestasNuevas(); }, []);
 
   async function cargar(q) {
     setLoading(true);
@@ -98,7 +99,7 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
       <div className="tabbar">
         <button className={tab === 'listado' ? 'active' : ''} onClick={() => setTab('listado')}>Listado</button>
         <button className={tab === 'entrevistas' ? 'active' : ''} onClick={() => setTab('entrevistas')}>
-          Entrevistas nuevas {entrevistas.length ? <span style={{ opacity: .6 }}>({entrevistas.length})</span> : ''}
+          Cuestionarios nuevos {respuestasNuevas.length ? <span style={{ opacity: .6 }}>({respuestasNuevas.length})</span> : ''}
         </button>
         {statsSlot && <button className={tab === 'estadisticas' ? 'active' : ''} onClick={() => setTab('estadisticas')}>Estadísticas</button>}
       </div>
@@ -107,25 +108,42 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
 
       {tab === 'entrevistas' && (
         <table className="plain">
-          <thead><tr><th>Recibida</th><th>Nombre</th><th>WhatsApp</th><th>Primera consulta</th><th>Motivo</th><th></th></tr></thead>
+          <thead><tr><th>Recibida</th><th>Cuestionario</th><th>Nombre</th><th></th></tr></thead>
           <tbody>
-            {entrevistas.map(e => (
-              <tr key={e.id}>
-                <td style={{ fontFamily: 'var(--mono)', fontSize: 11.5 }}>{(e.created_at || '').slice(0, 10)}</td>
-                <td style={{ fontWeight: 600 }}>{e.nombre}</td>
-                <td>{e.whatsapp || '-'}</td>
-                <td>{e.fecha_primera_consulta || '-'}</td>
-                <td style={{ maxWidth: 260, fontSize: 12.5 }}>{e.motivo_consulta || '-'}</td>
-                <td style={{ display: 'flex', gap: 6 }}>
-                  {e.paciente_id && <button className="icon-btn" onClick={() => setSeleccionado(e.paciente_id)}>Ver ficha</button>}
-                  <button className="icon-btn" onClick={() => marcarRevisada(e.id)}>Marcar vista</button>
-                </td>
-              </tr>
-            ))}
-            {!entrevistas.length && <tr><td colSpan={6} style={{ color: 'var(--ink-faint)' }}>No hay entrevistas nuevas sin revisar.</td></tr>}
+            {respuestasNuevas.map(r => {
+              const campoNombre = (r.cuestionario_campos || []).find(c => c.tipo === 'nombre_paciente');
+              const nombre = r.paciente_nombre || (campoNombre ? r.respuestas?.[campoNombre.id] : null) || '—';
+              return (
+                <tr key={r.id}>
+                  <td style={{ fontFamily: 'var(--mono)', fontSize: 11.5 }}>{(r.created_at || '').slice(0, 10)}</td>
+                  <td><span className="tag">{r.cuestionario_nombre}</span></td>
+                  <td style={{ fontWeight: 600 }}>{nombre}</td>
+                  <td style={{ display: 'flex', gap: 6 }}>
+                    <button className="icon-btn" onClick={() => setViendoRespuesta(r)}>Ver respuestas</button>
+                    {r.paciente_id && <button className="icon-btn" onClick={() => setSeleccionado(r.paciente_id)}>Ver ficha</button>}
+                    <button className="icon-btn" onClick={() => marcarRevisada(r.id)}>Marcar vista</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {!respuestasNuevas.length && <tr><td colSpan={4} style={{ color: 'var(--ink-faint)' }}>No hay cuestionarios nuevos sin revisar.</td></tr>}
           </tbody>
         </table>
       )}
+
+      <SidePanel open={!!viendoRespuesta} onClose={() => setViendoRespuesta(null)} title={viendoRespuesta?.cuestionario_nombre || 'Respuesta'}
+        subtitle={viendoRespuesta ? `Recibida el ${(viendoRespuesta.created_at || '').slice(0, 10)}` : ''}>
+        {viendoRespuesta && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {(viendoRespuesta.cuestionario_campos || []).map(c => (
+              <div key={c.id}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 2 }}>{c.etiqueta}</div>
+                <div style={{ fontSize: 13.5, color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>{viendoRespuesta.respuestas?.[c.id] || <span style={{ color: 'var(--ink-faint)' }}>—</span>}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SidePanel>
 
       {tab === 'listado' && (
         <>
@@ -302,23 +320,25 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
             <a href="#sec-cobros">Cobros</a>
             <a href="#sec-portal">Portal</a>
             <a href="#sec-archivos">Archivos</a>
+            {data.cuestionarios.length > 0 && <a href="#sec-cuestionarios">Cuestionarios</a>}
           </div>
 
-            {data.entrevistas.length > 0 && (
-              <>
-                <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Entrevista de prefiltro</h2></div>
-                {data.entrevistas.map(e => (
-                  <table className="plain" key={e.id} style={{ marginBottom: 18 }}>
+            {data.cuestionarios.length > 0 && (
+              <div id="sec-cuestionarios">
+                <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Cuestionarios respondidos</h2></div>
+                {data.cuestionarios.map(c => (
+                  <table className="plain" key={c.id} style={{ marginBottom: 18 }}>
+                    <caption style={{ captionSide: 'top', textAlign: 'left', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 6 }}>
+                      {c.cuestionario_nombre || 'Cuestionario'} · {(c.created_at || '').slice(0, 10)}
+                    </caption>
                     <tbody>
-                      {e.fecha_primera_consulta && <tr><th style={{ width: 140 }}>Primera consulta</th><td>{e.fecha_primera_consulta}</td></tr>}
-                      {e.deporte && <tr><th>Deporte</th><td>{e.deporte}</td></tr>}
-                      {e.gimnasio && <tr><th>Gimnasio</th><td>{e.gimnasio}</td></tr>}
-                      {e.como_conocio && <tr><th>Cómo nos conoció</th><td>{e.como_conocio}</td></tr>}
-                      {e.motivo_consulta && <tr><th>Motivo de consulta</th><td>{e.motivo_consulta}</td></tr>}
+                      {(c.cuestionario_campos || []).filter(campo => c.respuestas?.[campo.id]).map(campo => (
+                        <tr key={campo.id}><th style={{ width: 160 }}>{campo.etiqueta}</th><td>{c.respuestas[campo.id]}</td></tr>
+                      ))}
                     </tbody>
                   </table>
                 ))}
-              </>
+              </div>
             )}
 
             <div id="sec-evolucion"><EvolucionPaciente pacienteId={id} /></div>
