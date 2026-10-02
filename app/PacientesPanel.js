@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
-import { ESTADO_LABEL } from '../lib/agendaEstados';
+import { ESTADO_LABEL, ESTADO_CLASS } from '../lib/agendaEstados';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
 import CobroTurnoModal from './CobroTurnoModal';
 import EvolucionChart from './EvolucionChart';
+import Avatar from './Avatar';
 
 const TIPO_ARCHIVO = [
   { value: 'plan', label: 'Plan alimentario' },
@@ -274,21 +275,36 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
         </>
       ) : errorMsg ? <p style={{ color: 'var(--rust)' }}>{errorMsg}</p> : data && (
         <>
-          <div className="section-head">
-            <span className="dot" /><h2>{data.paciente.nombre}</h2>
-            <button className="icon-btn" style={{ marginLeft: 'auto', fontSize: 11.5, padding: '4px 10px' }} onClick={() => setEditando(true)}>Editar</button>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
+            <Avatar nombre={data.paciente.nombre} size={52} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 style={{ margin: 0 }}>{data.paciente.nombre}</h2>
+                <button className="icon-btn" style={{ fontSize: 11.5, padding: '4px 10px' }} onClick={() => setEditando(true)}>Editar</button>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                {data.paciente.telefono && <span className="tag" style={{ fontSize: 11 }}>📞 {data.paciente.telefono}</span>}
+                {data.paciente.email && <span className="tag" style={{ fontSize: 11 }}>{data.paciente.email}</span>}
+                {data.paciente.dni && <span className="tag" style={{ fontSize: 11 }}>DNI {data.paciente.dni}</span>}
+                {data.paciente.fecha_nacimiento && <span className="tag" style={{ fontSize: 11 }}>🎂 {data.paciente.fecha_nacimiento}</span>}
+                {data.paciente.financiador && <span className="tag" style={{ fontSize: 11 }}>{data.paciente.financiador}</span>}
+                {!data.paciente.telefono && !data.paciente.email && !data.paciente.dni && !data.paciente.fecha_nacimiento && !data.paciente.financiador && (
+                  <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>Sin datos de contacto cargados — completalos con "Editar".</span>
+                )}
+              </div>
+              {data.paciente.notas && <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 8, marginBottom: 0 }}>{data.paciente.notas}</p>}
+            </div>
           </div>
 
-            <table className="plain" style={{ marginBottom: 18 }}>
-              <tbody>
-                <tr><th style={{ width: 140 }}>Teléfono</th><td>{data.paciente.telefono || '-'}</td></tr>
-                <tr><th>Email</th><td>{data.paciente.email || '-'}</td></tr>
-                <tr><th>DNI</th><td>{data.paciente.dni || '-'}</td></tr>
-                <tr><th>Nacimiento</th><td>{data.paciente.fecha_nacimiento || '-'}</td></tr>
-                <tr><th>Financiador</th><td>{data.paciente.financiador || '-'}</td></tr>
-                {data.paciente.notas && <tr><th>Notas</th><td>{data.paciente.notas}</td></tr>}
-              </tbody>
-            </table>
+          {/* Mini-nav para saltar directo a una sección sin tener que scrollear toda la ficha */}
+          <div className="ficha-subnav">
+            <a href="#sec-evolucion">Evolución</a>
+            <a href="#sec-plan">Plan</a>
+            <a href="#sec-turnos">Turnos</a>
+            <a href="#sec-cobros">Cobros</a>
+            <a href="#sec-portal">Portal</a>
+            <a href="#sec-archivos">Archivos</a>
+          </div>
 
             {data.entrevistas.length > 0 && (
               <>
@@ -307,10 +323,11 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
               </>
             )}
 
-            <EvolucionPaciente pacienteId={id} />
+            <div id="sec-evolucion"><EvolucionPaciente pacienteId={id} /></div>
 
-            <PlanNutricional pacienteId={id} />
+            <div id="sec-plan"><PlanNutricional pacienteId={id} /></div>
 
+            <div id="sec-turnos">
             <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Turnos</h2></div>
             <table className="plain" style={{ marginBottom: 18 }}>
               <thead><tr><th>Fecha</th><th>Profesional</th><th>Servicio</th><th>Estado</th><th>Saldo</th><th></th></tr></thead>
@@ -323,7 +340,7 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
                       <td style={{ fontFamily: 'var(--mono)' }}>{t.day} {t.time}</td>
                       <td>{t.resource}</td>
                       <td>{t.service}</td>
-                      <td>{ESTADO_LABEL[t.status] || t.status}</td>
+                      <td><span className={'tag' + (ESTADO_CLASS[t.status] ? ' ' + ESTADO_CLASS[t.status] : '')}>{ESTADO_LABEL[t.status] || t.status}</span></td>
                       <td style={{ color: saldo > 0 ? 'var(--rust)' : 'var(--ink-faint)' }}>{saldo !== null ? fmtMoney(saldo) : '—'}</td>
                       <td>
                         {t.status !== 'cancelled' && (
@@ -336,9 +353,11 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
                 {!data.turnos.length && <tr><td colSpan={6} style={{ color: 'var(--ink-faint)' }}>Sin turnos cargados desde este sistema todavía.</td></tr>}
               </tbody>
             </table>
+            </div>
 
+            <div id="sec-cobros">
             <div className="section-head"><span className="dot" /><h2 style={{ fontSize: 14 }}>Cobros</h2></div>
-            <table className="plain">
+            <table className="plain" style={{ marginBottom: 18 }}>
               <thead><tr><th>Fecha</th><th>Profesional</th><th>Monto</th><th>Medio</th></tr></thead>
               <tbody>
                 {data.cobros.map(c => (
@@ -352,10 +371,13 @@ function FichaPaciente({ id, empresaSlug, onBack, onUpdated }) {
                 {!data.cobros.length && <tr><td colSpan={4} style={{ color: 'var(--ink-faint)' }}>Sin cobros registrados todavía.</td></tr>}
               </tbody>
             </table>
+            </div>
 
-            <AccesoPortal pacienteId={id} empresaSlug={empresaSlug} pacienteNombre={data.paciente.nombre} pacienteTelefono={data.paciente.telefono} />
+            <div id="sec-portal">
+              <AccesoPortal pacienteId={id} empresaSlug={empresaSlug} pacienteNombre={data.paciente.nombre} pacienteTelefono={data.paciente.telefono} />
+            </div>
 
-            <ArchivosPaciente pacienteId={id} />
+            <div id="sec-archivos"><ArchivosPaciente pacienteId={id} /></div>
 
             <div style={{ marginTop: 16 }}>
               <button className="icon-btn" onClick={onBack}>← Volver al listado</button>

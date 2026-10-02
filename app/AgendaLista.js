@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADO_TABS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
 import { TurnoCard } from './AgendaSemana';
+import Avatar from './Avatar';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 function addDaysISO(iso, delta) {
@@ -74,7 +75,12 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
           {filtrados.map((t, idx) => (
             <tr key={t.id || `imp-${idx}`}>
               <td style={{ fontFamily: 'var(--mono)' }}>{t.time}</td>
-              <td>{t.paciente_nombre || '-'}</td>
+              <td>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Avatar nombre={t.paciente_nombre} size={24} />
+                  {t.paciente_nombre || '-'}
+                </div>
+              </td>
               <td>{t.resource}</td>
               <td>{(t.service || '').replace('Nutrición / ', '').replace('Nutrición Infantil / ', 'Infantil: ')}</td>
               <td>{t.modalidad === 'videollamada' ? 'Videollamada' : 'Presencial'}</td>

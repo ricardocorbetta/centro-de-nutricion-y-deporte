@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
 import LoadingSkeleton from './LoadingSkeleton';
 import ConfirmModal from './ConfirmModal';
+import Avatar from './Avatar';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -301,16 +302,12 @@ export default function CajaComisionesSection() {
       {errorMsg && <p style={{ color: 'var(--rust)', fontSize: 13 }}>{errorMsg}</p>}
 
       {modo === 'dia' && resumen && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-          background: cierreDia ? 'rgba(31,122,104,0.08)' : 'var(--surface-alt)',
-          border: '1px solid var(--border-strong)', borderRadius: 10, padding: 14, marginBottom: 18
-        }}>
+        <div className={'caja-status' + (cierreDia ? ' cerrada' : '')}>
           {cierreDia ? (
             <>
-              <span style={{ fontSize: 20 }}>✅</span>
+              <span className="icon-circle">✅</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>Caja cerrada</div>
+                <div className="titulo">Caja cerrada</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
                   Por {cierreDia.cerrado_por || '-'} a las {fmtHora(cierreDia.cerrado_en)} · Total {fmtMoney(cierreDia.total_cobrado)}
                 </div>
@@ -320,9 +317,9 @@ export default function CajaComisionesSection() {
             </>
           ) : (
             <>
-              <span style={{ fontSize: 20 }}>🔓</span>
+              <span className="icon-circle">🔓</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>Caja todavía abierta</div>
+                <div className="titulo">Caja todavía abierta</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
                   {resumen.cantidadCobros} cobro(s) por {fmtMoney(resumen.totalCobrado)} hasta ahora. Cerrala cuando termine el día.
                 </div>
@@ -370,7 +367,13 @@ export default function CajaComisionesSection() {
                     const pct = config.find(c => c.profesional === name)?.pct_profesional ?? defaultPct;
                     return (
                       <tr key={name}>
-                        <td>{name}</td><td>{fmtMoney(d.monto)}</td><td>{fmtMoney(d.comision)}</td><td>{d.count}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Avatar nombre={name} size={22} />
+                            {name}
+                          </div>
+                        </td>
+                        <td>{fmtMoney(d.monto)}</td><td>{fmtMoney(d.comision)}</td><td>{d.count}</td>
                         <td>
                           <button className="icon-btn" style={{ padding: '3px 8px', fontSize: 11 }}
                             onClick={() => imprimirLiquidacion({ profesional: name, desde, hasta, monto: d.monto, comision: d.comision, pct, count: d.count })}>

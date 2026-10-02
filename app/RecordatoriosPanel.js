@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import LoadingSkeleton from './LoadingSkeleton';
 import PedirContactoModal from './PedirContactoModal';
+import Avatar from './Avatar';
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 function addDaysISO(iso, n) {
@@ -109,29 +110,39 @@ export default function RecordatoriosPanel({ empresaNombre }) {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            <span className="tag" style={{ background: pendientes.length ? 'var(--rust-soft)' : 'var(--sage-soft)', color: pendientes.length ? 'var(--rust)' : 'var(--sage)' }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+            <span className={'tag' + (pendientes.length ? ' rust' : ' sage')} style={{ fontSize: 11.5, padding: '5px 12px' }}>
               {pendientes.length} pendiente{pendientes.length === 1 ? '' : 's'}
             </span>
-            <span className="tag">{enviados.length} ya enviado{enviados.length === 1 ? '' : 's'}</span>
+            <span className="tag sage" style={{ fontSize: 11.5, padding: '5px 12px' }}>{enviados.length} ya enviado{enviados.length === 1 ? '' : 's'}</span>
           </div>
 
-          {diasConTurnos.map(dia => (
-            <div key={dia} style={{ marginBottom: 18 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>{fmtDiaLargo(dia)}</h3>
+          {diasConTurnos.map(dia => {
+            const pendientesDia = porDia[dia].filter(t => !t.recordatorio_enviado_at).length;
+            return (
+            <div key={dia} style={{ marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <h3 style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', margin: 0, textTransform: 'capitalize' }}>{fmtDiaLargo(dia)}</h3>
+                {pendientesDia > 0 && <span className="tag rust" style={{ fontSize: 10.5 }}>{pendientesDia} por mandar</span>}
+              </div>
               <table className="plain">
                 <thead><tr><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead>
                 <tbody>
                   {porDia[dia].map(t => (
                     <tr key={t.id}>
                       <td style={{ fontFamily: 'var(--mono)' }}>{t.time}</td>
-                      <td>{t.paciente_nombre || '—'}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Avatar nombre={t.paciente_nombre} size={24} />
+                          {t.paciente_nombre || '—'}
+                        </div>
+                      </td>
                       <td>{t.resource}</td>
                       <td>{t.paciente_telefono || '—'}</td>
                       <td>
                         {t.recordatorio_enviado_at
-                          ? <span className="tag" style={{ background: 'var(--sage-soft)', color: 'var(--sage)' }}>Enviado</span>
-                          : <span className="tag" style={{ background: 'var(--rust-soft)', color: 'var(--rust)' }}>Pendiente</span>}
+                          ? <span className="tag sage">Enviado</span>
+                          : <span className="tag rust">Pendiente</span>}
                       </td>
                       <td style={{ display: 'flex', gap: 6 }}>
                         <button className="icon-btn wa" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => enviar(t)}>WhatsApp</button>
@@ -146,7 +157,8 @@ export default function RecordatoriosPanel({ empresaNombre }) {
                 </tbody>
               </table>
             </div>
-          ))}
+            );
+          })}
         </>
       )}
 

@@ -6,6 +6,7 @@ import LoadingSkeleton from './LoadingSkeleton';
 import CobroTurnoModal from './CobroTurnoModal';
 import PedirContactoModal from './PedirContactoModal';
 import ConfirmModal from './ConfirmModal';
+import Avatar from './Avatar';
 
 const DOW_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -27,7 +28,10 @@ export function TurnoCard({ t, onCambiarEstado, onCobrar, onRecordatorio }) {
   return (
     <div className={'turno-card' + (t.status === 'cancelled' ? ' cancelado' : '')}>
       <div className="time">{t.time}</div>
-      <div className="nombre">{t.paciente_nombre || '(sin nombre)'}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 1 }}>
+        <Avatar nombre={t.paciente_nombre} size={22} />
+        <div className="nombre" style={{ marginBottom: 0 }}>{t.paciente_nombre || '(sin nombre)'}</div>
+      </div>
       <div className="prof">{t.resource}</div>
       {t.id ? (
         <div className="estado-row">
