@@ -149,9 +149,9 @@ export default function PacientesPanel({ statsSlot, empresaSlug }) {
       {tab === 'listado' && (
         <>
           <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-            <input
+            <input type="search" aria-label="Buscar pacientes"
               value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o teléfono…" style={{ flex: 1, minWidth: 220 }}
+              placeholder="Buscar por nombre, teléfono, DNI o email…" style={{ flex: 1, minWidth: 220 }}
             />
             <button className="icon-btn primary" onClick={() => setCreando(true)}>+ Nuevo paciente</button>
           </div>

@@ -81,7 +81,7 @@ export default function PacienteSelector({ value, onChange }) {
 
   return (
     <div ref={boxRef} style={{ position: 'relative' }}>
-      <input
+      <input type="search" aria-label="Buscar paciente"
         value={query}
         onChange={e => { setQuery(e.target.value); setAbierto(true); setCreando(false); }}
         onFocus={() => setAbierto(true)}

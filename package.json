@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --import ./tests/registrar.mjs --test \"tests/unit/*.test.mjs\"",
+    "test:humo": "node --test \"tests/humo/*.test.mjs\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

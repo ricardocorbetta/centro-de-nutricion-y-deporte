@@ -15,9 +15,8 @@ Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.
 - Next.js 14 (App Router) + React 18, JavaScript (sin TypeScript). Desplegado en Vercel: push a `main`
   dispara el deploy. Remoto: `github.com/ricardocorbetta/centro-de-nutricion-y-deporte` (repo PÚBLICO de la
   cuenta `ricardocorbetta`; en esta compu se sube con `ricardocorbetta-cell`, colaboradora con escritura).
-- Producción: https://centro-de-nutricion-y-deporte-vt6l.vercel.app (proyecto Vercel `...-vt6l`). Hay un
-  segundo proyecto Vercel `centro-de-nutricion-y-deporte` conectado al mismo repo que falla en todos los
-  deploys desde antes de 2026-10-15: no es la app en uso. El estado del deploy se lee con
+- Producción: https://centro-de-nutricion-y-deporte-vt6l.vercel.app (proyecto Vercel `...-vt6l`, el único:
+  un segundo proyecto mal configurado que fallaba en cada deploy se borró el 2026-10-15). El estado del deploy se lee con
   `gh api repos/ricardocorbetta/centro-de-nutricion-y-deporte/commits/<sha>/status`.
 - Supabase Postgres, proyecto "cnd-cipolletti-panel" (`jvutndjtqknbliayqkwl`), plan free: se pausa tras ~7 días sin uso
   y la app deja de andar; se reanuda con "Restore project" en el dashboard. `pacientes.id` es bigint y `empresas.id` es uuid.
@@ -29,8 +28,12 @@ Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.
 - Variables de entorno en `.env.local` (ver `.env.example`): NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SESSION_SECRET (y opcionales de Google
   Calendar).
-- Para verificar cambios: `npx next build`. Hay un warning de Google Fonts (CssSyntaxError al minificar)
-  que es preexistente e inofensivo.
+- Para verificar cambios: `npx next build`, `npm test` (unitarias de lib/: teléfonos, fechas, turnos,
+  precios, sesiones y permisos; sin red) y `npm run test:humo` (contra producción, solo lectura o datos
+  inválidos que se rechazan; otra URL con `BASE_URL=...`). Después de cambiar la base, correr también el
+  auditor de seguridad (`get_advisors` del MCP): solo debe quedar el aviso INFO "RLS sin políticas".
+- Funciones de la base: nunca ejecutables por `anon`/`authenticated` (desde 2026-10-15 los privilegios por
+  defecto de `public` ya no lo conceden). Si una función nueva debe ser pública, concederlo a propósito.
 - MCP de Supabase: usar el servidor `supabase-nutrio` (HTTP oficial con OAuth, en `~/.claude.json`,
   fijado a `project_ref=jvutndjtqknbliayqkwl`). El servidor `supabase` es el de Balenzano (otra cuenta/org)
   y `supabase-aremat` / `supabase-copul` son de otros proyectos: no usarlos para EULALIA.
