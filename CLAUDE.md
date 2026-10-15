@@ -7,7 +7,17 @@ componente `XenomAdmin`) no se cambiaron para no cortar sesiones. El primer clie
 Centro de Nutrición y Deporte (CND), la clínica de Mariana Eulalia en Cipolletti, Río Negro.
 Empresa slug `cnd`, id `7662b424-9068-42d4-8057-6c9427a5504e`.
 
-Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.js` y rutas
+Roles de clínica (definidos en `lib/roles.js`, se gestionan en Configuración → Usuarios):
+- **Dirección** (`director`): todo, incluidas fichas clínicas, reportes, comisiones, reabrir cajas y usuarios.
+- **Secretaría** (`secretaria`): turnos, recordatorios, alta/búsqueda de pacientes (solo contacto, columnas
+  de `lib/pacientesColumnas.js`), cobros y cierre de caja del día. Sin datos clínicos ni configuración.
+  Las rutas clínicas (`/api/pacientes/[id]/**`, `/api/cuestionarios/respuestas`) exigen `requireDirectorSession`.
+- Usuarios con `activo=false` no pueden iniciar sesión (sus registros quedan). Las sesiones ya abiertas duran
+  hasta 30 días: dar de baja no corta una sesión abierta (pendiente: versión de sesión).
+- Usuario de secretaría de CND: Valentina Cabagna (usuario `admi@centronutriciondeporte.com`), a dar de alta
+  desde la pantalla Usuarios. Las contraseñas las pone una persona, nunca se guardan en el repo.
+
+Además: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.js` y rutas
 `/api/xenom/*`), `director` y `secretaria` (atados a una empresa). Los pacientes entran al portal
 `/portal/<empresa>` con una cookie aparte.
 

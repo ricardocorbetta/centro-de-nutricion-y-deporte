@@ -43,12 +43,12 @@ test('todas las rutas internas rechazan a quien no inició sesión', async () =>
   const rutas = ['/api/pendientes', '/api/pacientes', '/api/agenda?fecha=2026-10-15', '/api/mejoras',
     '/api/bootstrap', '/api/goals', '/api/cobros', '/api/caja-resumen?desde=2026-10-01&hasta=2026-10-15',
     '/api/xenom/empresas', '/api/xenom/mejoras', '/api/admin/cuestionarios', '/api/biblioteca',
-    '/api/portal/me', '/api/portal/plan'];
+    '/api/portal/me', '/api/portal/plan', '/api/admin/usuarios'];
   for (const ruta of rutas) {
     const r = await pedir(ruta);
     assert.equal(r.status, 401, ruta + ' devolvió ' + r.status);
   }
-  for (const ruta of ['/api/config', '/api/mejoras', '/api/turnos', '/api/cobros']) {
+  for (const ruta of ['/api/config', '/api/mejoras', '/api/turnos', '/api/cobros', '/api/admin/usuarios', '/api/auth/password']) {
     const r = await postJson(ruta, {});
     assert.equal(r.status, 401, 'POST ' + ruta + ' devolvió ' + r.status);
   }

@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireDirectorSession } from '../../../../lib/auth';
+import { COLUMNAS_PACIENTE_FICHA } from '../../../../lib/pacientesColumnas';
 
 export const dynamic = 'force-dynamic';
 
 // GET: ficha de un paciente + su historial de turnos y cobros (propios del sistema, no importados de drManager
 // — esos no tienen forma de vincularse a una ficha porque no traían paciente_id en el export).
 export async function GET(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
     const sb = supabaseAdmin();
     const [{ data: paciente, error: e1 }, { data: turnos }, { data: cobros }, { data: respuestasCuestionarios }] = await Promise.all([
-      sb.from('pacientes').select('*').eq('id', id).eq('empresa_id', session.empresaId).single(),
+      sb.from('pacientes').select(COLUMNAS_PACIENTE_FICHA).eq('id', id).eq('empresa_id', session.empresaId).single(),
       sb.from('turnos_propios').select('*').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('day', { ascending: false }),
       sb.from('cobros').select('*').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('fecha', { ascending: false }),
       sb.from('cuestionario_respuestas').select('*, cuestionarios(nombre, slug, campos)').eq('paciente_id', id).eq('empresa_id', session.empresaId).order('created_at', { ascending: false })
@@ -31,7 +32,7 @@ export async function GET(request, { params }) {
 
 // PATCH: edita los datos de la ficha. Body: campos a cambiar (mismos nombres que en el POST de creación).
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -48,7 +49,7 @@ export async function PATCH(request, { params }) {
 
     const sb = supabaseAdmin();
     const { data, error: dbErr } = await sb.from('pacientes').update(patch)
-      .eq('id', id).eq('empresa_id', session.empresaId).select().single();
+      .eq('id', id).eq('empresa_id', session.empresaId).select(COLUMNAS_PACIENTE_FICHA).single();
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
     return NextResponse.json({ ok: true, paciente: data });
   } catch (err) {

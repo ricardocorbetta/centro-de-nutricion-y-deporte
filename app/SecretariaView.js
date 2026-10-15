@@ -123,6 +123,7 @@ export default function SecretariaView({ name, username, empresa }) {
       ]}
       activo={tab} onIr={setTab}
       menu={[
+        { id: 'contrasena', label: 'Cambiar contraseña', icono: 'llave', onClick: () => window.dispatchEvent(new CustomEvent('cambiar-contrasena')) },
         { id: 'sugerencias', label: 'Sugerencias', icono: 'sugerencias', onClick: () => window.dispatchEvent(new CustomEvent('abrir-sugerencias')) },
         { id: 'salir', label: 'Salir', icono: 'salir', onClick: handleLogout }
       ]}>
@@ -187,12 +188,16 @@ export default function SecretariaView({ name, username, empresa }) {
             </div></section>
 
             <section><div className="card">
-              <div className="section-head"><span className="dot" /><h2>Cierre del día</h2></div>
+              <div className="section-head"><h2>Cierre del día</h2></div>
               {resumenHoy ? (
                 <>
                   <div className="kpi-grid" style={{ marginBottom: 18 }}>
                     <div className="kpi"><div className="label">Total cobrado</div><div className="value">{fmtMoney(resumenHoy.totalCobrado)}</div><div className="foot">{resumenHoy.cantidadCobros} cobros</div></div>
+                    {Object.entries(resumenHoy.porMedioPago || {}).map(([medio, monto]) => (
+                      <div key={medio} className="kpi"><div className="label">{medio}</div><div className="value">{fmtMoney(monto)}</div></div>
+                    ))}
                   </div>
+                  <CierreCajaHoy fecha={todayISO()} hayCobros={resumenHoy.cantidadCobros > 0} />
                   <MensajeCierre resumen={resumenHoy} fecha={todayISO()} />
                 </>
               ) : <p style={{ color: 'var(--ink-faint)' }}>Sin datos todavía.</p>}
@@ -202,6 +207,53 @@ export default function SecretariaView({ name, username, empresa }) {
 
       <FeedbackBoton pantalla={{ inicio: 'Inicio (secretaría)', agenda: 'Agenda (secretaría)', caja: 'Caja (secretaría)' }[tab]} />
     </AppShell>
+  );
+}
+
+// Cierre formal de la caja del día: guarda la foto de los totales con quién y cuándo cerró.
+// Si después entra un cobro, se puede volver a cerrar para actualizar la foto. Reabrir una caja
+// cerrada (borrar el cierre) queda solo para dirección.
+function CierreCajaHoy({ fecha, hayCobros }) {
+  const [cierre, setCierre] = useState(undefined);
+  const [estado, setEstado] = useState({ ocupado: false, msg: '', err: false });
+
+  async function cargar() {
+    try {
+      const res = await fetch('/api/caja/cierre?fecha=' + fecha);
+      const data = await res.json();
+      setCierre(data.cierre || null);
+    } catch (e) { setCierre(null); }
+  }
+  useEffect(() => { cargar(); }, [fecha]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function cerrar() {
+    setEstado({ ocupado: true, msg: '', err: false });
+    try {
+      const res = await fetch('/api/caja/cierre', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sin-aviso': '1' }, body: JSON.stringify({ fecha }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja.');
+      setCierre(data.cierre);
+      setEstado({ ocupado: false, msg: 'Caja cerrada.', err: false });
+    } catch (err) { setEstado({ ocupado: false, msg: err.message, err: true }); }
+  }
+
+  if (cierre === undefined) return null;
+  const hora = cierre?.cerrado_en ? new Date(cierre.cerrado_en).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit' }) : '';
+  return (
+    <div className={'cierre-estado' + (cierre ? ' cerrado' : '')}>
+      <div>
+        <b>{cierre ? 'Caja de hoy cerrada' : 'La caja de hoy está abierta'}</b>
+        <span>{cierre
+          ? `Cerró ${cierre.cerrado_por} a las ${hora} · ${fmtMoney(cierre.total_cobrado)} en ${cierre.cantidad_cobros} cobros. Si entra otro cobro, volvé a cerrar para actualizarla.`
+          : 'Al terminar el día, revisá los cobros y cerrá la caja: queda registrado quién la cerró y con qué totales.'}</span>
+      </div>
+      <div className="mej-acciones">
+        {estado.msg && <span className={'status-msg' + (estado.err ? ' err' : '')} role="status">{estado.msg}</span>}
+        <button className={'icon-btn' + (cierre ? '' : ' primary')} disabled={estado.ocupado || (!hayCobros && !cierre)} onClick={cerrar}>
+          {estado.ocupado ? 'Cerrando…' : cierre ? 'Actualizar cierre' : 'Cerrar la caja de hoy'}
+        </button>
+      </div>
+    </div>
   );
 }
 

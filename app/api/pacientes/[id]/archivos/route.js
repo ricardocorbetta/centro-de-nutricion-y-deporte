@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../lib/auth';
 import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ const BUCKET = 'paciente-archivos';
 
 // GET: lista los archivos (planes, bioimpedancia, antropometría) cargados para este paciente.
 export async function GET(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -27,7 +27,7 @@ export async function GET(request, { params }) {
 // POST: sube un archivo nuevo (multipart/form-data). Campos: file, tipo (plan|bioimpedancia|antropometria),
 // categoria (ej: "Plan base", "Plan de viaje"...), nombre (etiqueta visible), fecha (opcional, default hoy).
 export async function POST(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

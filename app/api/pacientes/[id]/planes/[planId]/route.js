@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // PATCH: edita un plan existente (título, secciones, notas) o cambia si está activo.
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id, planId } = params;
@@ -36,7 +36,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE: elimina un plan (por ejemplo un borrador cargado por error).
 export async function DELETE(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id, planId } = params;

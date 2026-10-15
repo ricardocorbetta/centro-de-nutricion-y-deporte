@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireDirectorSession } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 // pacientes como para la sección de un paciente puntual en su ficha.
 // ?pacienteId= filtra por paciente. ?sinRevisar=1 trae solo las que no se revisaron todavía.
 export async function GET(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { searchParams } = new URL(request.url);
@@ -37,7 +37,7 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { searchParams } = new URL(request.url);

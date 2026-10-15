@@ -24,6 +24,7 @@ import XenomAdmin from './XenomAdmin';
 import AppShell, { SubNav } from './AppShell';
 import FeedbackBoton from './FeedbackBoton';
 import InicioPendientes from './InicioPendientes';
+import UsuariosAdmin from './UsuariosAdmin';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
   if (esAdminPlataforma) return <XenomAdmin name={name} username={username} />;
@@ -271,6 +272,7 @@ const HOJAS = {
   oportunidad: { destino: 'reportes', label: 'Oportunidad' },
   simulador: { destino: 'reportes', label: 'Simulador' },
   'profesionales-admin': { destino: 'configuracion', label: 'Profesionales' },
+  usuarios: { destino: 'configuracion', label: 'Usuarios' },
   'config-precios': { destino: 'configuracion', label: 'Precios y capacidad' },
   'config-carga': { destino: 'configuracion', label: 'Cargar período' },
   'google-calendar': { destino: 'configuracion', label: 'Google Calendar' },
@@ -339,6 +341,7 @@ function Dashboard({
       onIr={irADestino}
       menu={[
         { id: 'configuracion', label: 'Configuración', icono: 'configuracion', onClick: () => irADestino('configuracion') },
+        { id: 'contrasena', label: 'Cambiar contraseña', icono: 'llave', onClick: () => window.dispatchEvent(new CustomEvent('cambiar-contrasena')) },
         { id: 'sugerencias', label: 'Sugerencias', icono: 'sugerencias', onClick: () => window.dispatchEvent(new CustomEvent('abrir-sugerencias')) },
         { id: 'salir', label: 'Salir', icono: 'salir', onClick: onLogout }
       ]}>
@@ -429,6 +432,10 @@ function Dashboard({
 
       {activeSection === 'caja' && (
         <section><div className="card"><CajaComisionesSection /></div></section>
+      )}
+
+      {activeSection === 'usuarios' && (
+        <section><div className="card"><UsuariosAdmin /></div></section>
       )}
 
       {activeSection === 'profesionales-admin' && (

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../lib/auth';
 import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 
 // GET: historial de mediciones (peso/medidas) de un paciente, más antiguo primero (para graficar).
 export async function GET(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
 
 // POST: carga una nueva medición (control de peso/antropometría) para el paciente.
 export async function POST(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../lib/auth';
+import { columnasPacientePara } from '../../../lib/pacientesColumnas';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get('q') || '').trim();
     const sb = supabaseAdmin();
-    let query = sb.from('pacientes').select('*').eq('empresa_id', session.empresaId);
+    let query = sb.from('pacientes').select(columnasPacientePara(session)).eq('empresa_id', session.empresaId);
     // Comas, paréntesis y comodines rompen el filtro .or() de PostgREST: se sacan del texto buscado.
     const t = q.replace(/[,()%*\\]/g, ' ').trim();
     if (t) {
@@ -48,7 +49,7 @@ export async function POST(request) {
       fecha_nacimiento: fechaNacimiento || null,
       financiador: financiador || null,
       notas: notas || null
-    }).select().single();
+    }).select(columnasPacientePara(session)).single();
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
     return NextResponse.json({ ok: true, paciente: data });
   } catch (err) {

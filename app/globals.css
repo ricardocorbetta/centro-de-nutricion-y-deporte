@@ -747,3 +747,35 @@ footer{text-align:center; font-family:var(--mono); font-size:11px; color:var(--i
 .horarios-grupo{display:flex; flex-direction:column; gap:8px;}
 .horarios-grupo-titulo{font-size:13px; font-weight:600; color:var(--text-2);}
 .horarios-grupo .timeslot-grid{margin-bottom:0;}
+
+/* ===== Usuarios y roles (UsuariosAdmin.js) y cierre de caja de secretaría ===== */
+.usuarios-lista{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:8px;}
+.usuario-fila{display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--surface); flex-wrap:wrap;}
+.usuario-fila.inactivo{opacity:.65;}
+.usuario-datos{display:flex; flex-direction:column; gap:2px; flex:1; min-width:180px;}
+.usuario-nombre{font-weight:700;}
+.usuario-yo{font-weight:500; color:var(--text-2);}
+.usuario-sub{font-size:12.5px; color:var(--text-2); word-break:break-all;}
+.roles-titulo{font-size:15px; margin:26px 0 10px;}
+.roles-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;}
+.rol-tarjeta{display:flex; flex-direction:column; gap:6px; padding:14px 16px; border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface-2); font-size:13.5px;}
+.rol-tarjeta ul{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:3px;}
+.rol-desc{color:var(--text-2);}
+.rol-no{margin-top:6px; font-weight:600; color:var(--danger-ink); font-size:12.5px;}
+.rol-no-lista{color:var(--text-2);}
+.rol-opciones{border:0; padding:0; margin:0; display:grid; gap:8px;}
+.rol-opciones legend{font-weight:600; font-size:13px; color:var(--text-2); margin-bottom:6px; padding:0;}
+.rol-opcion{position:relative; display:flex; flex-direction:column; gap:2px; padding:10px 12px; border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer;}
+.rol-opcion input{position:absolute; opacity:0; pointer-events:none;}
+.rol-opcion.activo{border-color:var(--brand); background:var(--brand-soft);}
+.rol-opcion:focus-within{box-shadow:var(--focus-ring);}
+.rol-opciones:disabled .rol-opcion{cursor:not-allowed; opacity:.7;}
+.rol-opcion-titulo{font-weight:700; font-size:14px;}
+.rol-opcion-desc{font-size:12.5px; color:var(--text-2);}
+.contrasena-fila{display:flex; gap:6px;}
+.contrasena-fila input{flex:1; min-width:0;}
+.usuario-baja{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding-top:14px; border-top:1px solid var(--line);}
+.cierre-estado{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; margin-bottom:16px; border-radius:var(--r-md); border:1px solid var(--warn); background:var(--warn-soft);}
+.cierre-estado > div:first-child{display:flex; flex-direction:column; gap:3px; max-width:560px;}
+.cierre-estado span{font-size:13px; color:var(--text-2);}
+.cierre-estado.cerrado{border-color:var(--ok); background:var(--ok-soft);}

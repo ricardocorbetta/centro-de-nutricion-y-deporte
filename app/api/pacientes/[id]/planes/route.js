@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../lib/auth';
 import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 
 // GET: historial de planes nutricionales del paciente, más reciente primero.
 export async function GET(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
 // POST: crea un plan nutricional nuevo. Si se marca activo, desactiva los anteriores
 // (el paciente ve en su portal solo el plan activo, pero el historial queda guardado).
 export async function POST(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

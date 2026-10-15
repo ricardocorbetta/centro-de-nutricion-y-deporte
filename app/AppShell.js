@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Avatar from './Avatar';
 import Icono from './Icono';
 import SidePanel from './SidePanel';
+import CambiarContrasena from './CambiarContrasena';
 import { LOGO_DATA_URI } from '../lib/logo';
 
 // Armazón de las pantallas internas (dirección y secretaría), con el patrón de Balenzano:
@@ -94,6 +95,8 @@ export default function AppShell({ empresa, nombre, rol, destinos, activo, onIr,
           </button>
         )}
       </nav>
+
+      <CambiarContrasena />
 
       <SidePanel open={masAbierto} onClose={() => setMasAbierto(false)} title="Más opciones" width={360}>
         <div className="shell-mas">
