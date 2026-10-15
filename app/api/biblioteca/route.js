@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../lib/auth';
+import { requireEmpresaSession, requireDirectorSession } from '../../../lib/auth';
+import { hoyAR } from '../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'biblioteca-cnd';
@@ -29,7 +30,7 @@ export async function GET(request) {
 // visibilidad (propios|todos_cnd|especificos), pacientesIds (JSON array, solo si visibilidad=especificos),
 // fecha, file (opcional: PDF o imagen).
 export async function POST(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const form = await request.formData();
@@ -38,7 +39,7 @@ export async function POST(request) {
     const titulo = form.get('titulo');
     const descripcion = form.get('descripcion') || null;
     const visibilidad = form.get('visibilidad') || 'propios';
-    const fecha = form.get('fecha') || new Date().toISOString().slice(0, 10);
+    const fecha = form.get('fecha') || hoyAR();
     const pacientesIds = JSON.parse(form.get('pacientesIds') || '[]');
     const file = form.get('file');
 

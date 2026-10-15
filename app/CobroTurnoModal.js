@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { fmtMoney } from '../lib/stats';
 import SidePanel from './SidePanel';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 const MEDIOS_PAGO = ['Efectivo', 'Transferencia', 'Débito', 'Crédito', 'MercadoPago'];
 const TIPO_COBRO = [

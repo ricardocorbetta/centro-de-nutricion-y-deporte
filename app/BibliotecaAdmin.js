@@ -5,10 +5,11 @@ import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
 import Avatar from './Avatar';
 import SidePanel from './SidePanel';
+import { hoyAR } from '../lib/fechas';
 
 const TIPO_TAG_CLASS = { receta: 'sage', pauta_general: 'rust' };
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 const TIPO = [
   { value: 'receta', label: 'Receta' },

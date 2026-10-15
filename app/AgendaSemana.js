@@ -7,10 +7,11 @@ import CobroTurnoModal from './CobroTurnoModal';
 import PedirContactoModal from './PedirContactoModal';
 import ConfirmModal from './ConfirmModal';
 import Avatar from './Avatar';
+import { hoyAR } from '../lib/fechas';
 
 const DOW_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 function toISO(d) { return d.toISOString().slice(0, 10); }
 function mondayOf(iso) {
   const d = new Date(iso + 'T00:00:00');

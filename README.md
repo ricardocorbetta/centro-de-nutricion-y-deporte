@@ -1,4 +1,4 @@
-# NUTRIO — Plataforma de gestión para centros de nutrición y deporte
+# EULALIA — Plataforma de gestión para centros de nutrición y deporte
 
 App Next.js + Supabase, ahora **multi-tenant**: una sola instalación puede
 alojar varias clínicas ("empresas"), cada una con sus propios usuarios,
@@ -20,15 +20,15 @@ migrado con todos sus datos reales.
 - El link público de reserva de turnos ahora es **por clínica**:
   `/reservar/<slug>`. El de CND es `/reservar/cnd` (antes era `/reservar`
   a secas).
-- Nuevo rol: **administrador de plataforma** (NUTRIO/Ricardo). Este usuario
+- Nuevo rol: **administrador de plataforma** (EULALIA/Ricardo). Este usuario
   no pertenece a ninguna empresa — al iniciar sesión ve un panel propio
-  (**Panel NUTRIO**) para dar de alta nuevas clínicas clientes, sin tocar
+  (**Panel EULALIA**) para dar de alta nuevas clínicas clientes, sin tocar
   SQL a mano.
 
 ### Cómo dar de alta un cliente nuevo
 
 1. Entrá con el usuario de plataforma (ver credenciales abajo).
-2. En el Panel NUTRIO, "+ Nueva empresa": cargás nombre del centro, ciudad,
+2. En el Panel EULALIA, "+ Nueva empresa": cargás nombre del centro, ciudad,
    y los datos del primer usuario (el director de esa clínica).
 3. Al crear, la plataforma automáticamente:
    - crea la empresa y le genera un slug para su link de reserva,
@@ -38,21 +38,20 @@ migrado con todos sus datos reales.
 4. Le pasás al cliente su usuario/contraseña y el link `/reservar/<slug>`.
    Desde ahí, esa clínica ya puede operar de forma completamente
    independiente — agenda, caja, comisiones, reserva pública.
-5. Si hace falta suspenderla (por ejemplo, falta de pago), el Panel NUTRIO
+5. Si hace falta suspenderla (por ejemplo, falta de pago), el Panel EULALIA
    tiene un botón "Suspender" por empresa: sus usuarios no van a poder
    iniciar sesión hasta reactivarla.
 
 ### Usuarios actuales
 
-| Usuario | Contraseña | Rol | Empresa |
-|---|---|---|---|
-| `xenom` | `Xenom-Plataforma2026!` | admin de plataforma | (ninguna — ve el Panel NUTRIO) |
-| `mariana` | `CND-Directora2026!` | director | CND |
-| `secretaria` | `CND-Secretaria2026!` | secretaria | CND |
+| Usuario | Rol | Empresa |
+|---|---|---|
+| `xenom` | admin de plataforma | (ninguna — ve el Panel EULALIA) |
+| `mariana` | director | CND |
+| `secretaria` | secretaria | CND |
 
-**Recomendado cambiar estas tres contraseñas apenas se suba esta versión**
-(no hay pantalla de "cambiar contraseña" todavía — se actualiza con una
-consulta SQL puntual; lo hago yo si hace falta).
+Las contraseñas **no se guardan en este repositorio** (es público). Las tiene el
+administrador de la plataforma.
 
 ## Funciones (para cada clínica cliente)
 
@@ -125,7 +124,7 @@ mismo deploy de Vercel — no hace falta crear nada nuevo por cliente.
 Todo ya está migrado y cargado en Supabase (`jvutndjtqknbliayqkwl`). La
 migración a multi-tenant se hizo sin downtime ni pérdida de datos
 (verificado fila por fila contra los datos previos). No hace falta tocar
-nada ahí — las clínicas nuevas se crean desde el Panel NUTRIO.
+nada ahí — las clínicas nuevas se crean desde el Panel EULALIA.
 
 ## Cómo subir esta versión
 
@@ -165,7 +164,7 @@ como primer cliente real), pero para salir a vender a otras clínicas
 todavía faltaría:
 
 - **Cobro/suscripción**: hoy el campo `plan` y el botón "Suspender" del
-  Panel NUTRIO existen, pero no hay integración de cobro automático (Mercado
+  Panel EULALIA existen, pero no hay integración de cobro automático (Mercado
   Pago, etc.) ni corte automático por falta de pago.
 - **Alta autoservicio**: hoy solo vos (Xenom) podés dar de alta una
   clínica nueva desde el panel. No hay un formulario público de "quiero
@@ -189,7 +188,7 @@ todavía faltaría:
 - Mismos pasos de siempre para el deploy (revisar el hash de commit y las
   4 environment variables).
 - Si un usuario no puede entrar: puede ser que su empresa esté
-  "Suspendida" en el Panel NUTRIO.
+  "Suspendida" en el Panel EULALIA.
 - Si en `/reservar/<slug>` no aparece ningún horario libre: puede ser que
   la fecha caiga en un día que ese profesional no atiende, o que el slug
-  esté mal escrito (revisá el link exacto en el Panel NUTRIO).
+  esté mal escrito (revisá el link exacto en el Panel EULALIA).

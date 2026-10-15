@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../../lib/auth';
+import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export async function POST(request, { params }) {
       empresa_id: session.empresaId,
       paciente_id: Number(id),
       titulo: String(body.titulo).trim(),
-      fecha: body.fecha || new Date().toISOString().slice(0, 10),
+      fecha: body.fecha || hoyAR(),
       profesional: body.profesional || session.name || null,
       notas_generales: body.notasGenerales || null,
       secciones: Array.isArray(body.secciones) ? body.secciones : [],

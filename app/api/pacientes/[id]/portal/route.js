@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../lib/auth';
+import { requireEmpresaSession, requireDirectorSession } from '../../../../../lib/auth';
 import { generarClavePortal, generarUsuarioPortal, obtenerVigenciaPaciente } from '../../../../../lib/portal';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
 // POST: genera (o regenera) el usuario/clave del portal para este paciente. Body opcional: { username }.
 // Devuelve la clave en texto plano UNA sola vez, para que la secretaria se la pase al paciente por WhatsApp.
 export async function POST(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

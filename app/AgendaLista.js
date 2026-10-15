@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ESTADO_LABEL, ESTADO_CLASS, ESTADO_TABS, ESTADOS_VALIDOS } from '../lib/agendaEstados';
 import { TurnoCard } from './AgendaSemana';
 import Avatar from './Avatar';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 function addDaysISO(iso, delta) {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + delta);

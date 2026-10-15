@@ -9,6 +9,7 @@ import CobroTurnoModal from './CobroTurnoModal';
 import EvolucionChart from './EvolucionChart';
 import Avatar from './Avatar';
 import SidePanel from './SidePanel';
+import { hoyAR } from '../lib/fechas';
 
 const TIPO_ARCHIVO = [
   { value: 'plan', label: 'Plan alimentario' },
@@ -17,7 +18,7 @@ const TIPO_ARCHIVO = [
 ];
 const TIPO_ARCHIVO_LABEL = Object.fromEntries(TIPO_ARCHIVO.map(t => [t.value, t.label]));
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 const CAMPOS_FICHA = [
   { key: 'nombre', label: 'Nombre', required: true },

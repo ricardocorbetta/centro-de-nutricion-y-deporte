@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireDirectorSession } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'cartelera-publica';
@@ -8,7 +8,7 @@ const BUCKET = 'cartelera-publica';
 // PATCH: activar/desactivar, destacar, o editar el contenido de un ítem (multipart/form-data si
 // viene con imagen nueva; JSON si es solo texto/flags).
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -58,7 +58,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE: borra definitivamente un ítem (y su imagen, si tenía).
 export async function DELETE(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

@@ -5,9 +5,10 @@ import { fmtMoney } from '../lib/stats';
 import LoadingSkeleton from './LoadingSkeleton';
 import ConfirmModal from './ConfirmModal';
 import Avatar from './Avatar';
+import { hoyAR } from '../lib/fechas';
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return hoyAR();
 }
 function firstOfMonthISO() {
   const d = new Date();

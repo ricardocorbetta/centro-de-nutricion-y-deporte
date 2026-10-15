@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { MODALIDADES } from '../lib/agendaEstados';
 import PacienteSelector from './PacienteSelector';
 import SidePanel from './SidePanel';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 // Modal de creación de turno, compartido entre la vista de Lista, Grilla y Semana,
 // y por el menú rápido "+ Nuevo" (Nuevo Turno / Nueva Videoconsulta).

@@ -36,7 +36,8 @@ export async function POST(request, { params }) {
     if (!monto || monto <= 0) return NextResponse.json({ error: 'No se pudo determinar un monto a cobrar (¿ya está todo cobrado?).' }, { status: 400 });
     const tipoRef = yaCobrado ? 'saldo' : 'completo';
 
-    const origen = request.headers.get('origin') || new URL(request.url).origin;
+    // No usar el header Origin: lo manda el cliente y podría desviar el pago y el webhook a otro dominio.
+    const origen = process.env.APP_URL || new URL(request.url).origin;
     const pref = await crearPreferencia({
       accessToken: empresa.mercadopago_access_token,
       titulo: `${tipoRef === 'saldo' ? 'Saldo — ' : ''}${turno.service || 'Consulta'} — ${empresa.nombre}`,

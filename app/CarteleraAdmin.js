@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import ConfirmModal from './ConfirmModal';
 import LoadingSkeleton from './LoadingSkeleton';
 import SidePanel from './SidePanel';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 const TIPO = [
   { value: 'taller', label: 'Taller / capacitación' },

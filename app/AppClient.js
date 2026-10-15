@@ -297,7 +297,7 @@ function Dashboard({
           <div className="topbar-brand">
             <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
             <div className="topbar-title">
-              <span className="app-name">NUTRIO</span>
+              <span className="app-name">EULALIA</span>
               <span className="app-sub">{empresa?.nombre || 'Panel de gestión'}</span>
             </div>
           </div>
@@ -443,7 +443,7 @@ function Dashboard({
             <section><div className="card"><MercadoPagoConfig /></div></section>
           )}
 
-          <footer>NUTRIO — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
+          <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
         </main>
       </div>
     </>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../lib/auth';
+import { requireEmpresaSession, requireDirectorSession } from '../../../lib/auth';
+import { hoyAR } from '../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'cartelera-publica';
@@ -26,14 +27,14 @@ export async function GET(request) {
 // POST: publica un ítem nuevo (multipart/form-data). Campos: tipo, titulo, descripcion, fecha,
 // destacar ("true"/"false"), image (opcional: flyer/foto).
 export async function POST(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const form = await request.formData();
     const tipo = form.get('tipo');
     const titulo = form.get('titulo');
     const descripcion = form.get('descripcion') || null;
-    const fecha = form.get('fecha') || new Date().toISOString().slice(0, 10);
+    const fecha = form.get('fecha') || hoyAR();
     const destacar = form.get('destacar') === 'true';
     const image = form.get('image');
 

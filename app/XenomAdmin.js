@@ -99,7 +99,7 @@ export default function XenomAdmin({ name, username }) {
         <div className="topbar-inner">
           <div className="topbar-brand">
             <div className="topbar-title">
-              <span className="app-name" style={{ color: '#1F7A68', fontWeight: 800 }}>NUTRIO</span>
+              <span className="app-name" style={{ color: '#1F7A68', fontWeight: 800 }}>EULALIA</span>
               <span className="app-sub">Panel de plataforma — administración de clínicas</span>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function XenomAdmin({ name, username }) {
           )}
         </div></section>
 
-        <footer>NUTRIO — panel de administración de la plataforma</footer>
+        <footer>EULALIA — panel de administración de la plataforma</footer>
       </div>
     </>
   );

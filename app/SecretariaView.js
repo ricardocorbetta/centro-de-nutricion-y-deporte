@@ -7,8 +7,9 @@ import { fmtMoney } from '../lib/stats';
 import AgendaBuilder from './AgendaBuilder';
 import PacienteSelector from './PacienteSelector';
 import Avatar from './Avatar';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 const MEDIOS_PAGO = ['Efectivo', 'Transferencia', 'Débito', 'Crédito', 'MercadoPago'];
 
@@ -206,7 +207,7 @@ export default function SecretariaView({ name, username, empresa }) {
           </>
         )}
 
-        <footer>NUTRIO — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
+        <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
       </div>
     </>
   );

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const body = await request.json();
@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const sb = supabaseAdmin();

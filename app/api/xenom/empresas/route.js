@@ -23,8 +23,10 @@ export async function GET(request) {
     ]);
     if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
     if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
+    // Nunca mandar al navegador credenciales de las clínicas (access token de MercadoPago, etc.).
+    const sinSecretos = emp => Object.fromEntries(Object.entries(emp).filter(([k]) => !/token|secret/i.test(k)));
     const result = (empresas || []).map(emp => ({
-      ...emp,
+      ...sinSecretos(emp),
       usuarios: (usuarios || []).filter(u => u.empresa_id === emp.id)
     }));
     return NextResponse.json({ empresas: result });

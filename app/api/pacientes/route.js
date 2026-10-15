@@ -14,8 +14,10 @@ export async function GET(request) {
     const q = (searchParams.get('q') || '').trim();
     const sb = supabaseAdmin();
     let query = sb.from('pacientes').select('*').eq('empresa_id', session.empresaId);
-    if (q) {
-      query = query.or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`);
+    // Comas, paréntesis y comodines rompen el filtro .or() de PostgREST: se sacan del texto buscado.
+    const t = q.replace(/[,()%*\\]/g, ' ').trim();
+    if (t) {
+      query = query.or(`nombre.ilike.%${t}%,telefono.ilike.%${t}%,email.ilike.%${t}%,dni.ilike.%${t}%`);
     }
     query = query.order('created_at', { ascending: false }).limit(50);
     const { data, error: dbErr } = await query;

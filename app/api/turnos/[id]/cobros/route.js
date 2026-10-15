@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../../lib/auth';
 import { estadoPagoTurno, comisionDe } from '../../../../../lib/cobrosTurno';
 import { priceFor, DEFAULT_PRECIOS } from '../../../../../lib/stats';
+import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'comprobantes-pago';
@@ -67,7 +68,7 @@ export async function POST(request, { params }) {
     const monto = Number(form.get('monto'));
     const medioPago = form.get('medioPago');
     const tipoCobro = form.get('tipoCobro') || 'completo';
-    const fecha = form.get('fecha') || new Date().toISOString().slice(0, 10);
+    const fecha = form.get('fecha') || hoyAR();
     const comprobante = form.get('comprobante');
 
     if (!monto || monto <= 0 || !medioPago) {
@@ -107,8 +108,9 @@ export async function POST(request, { params }) {
     // Si con este cobro se terminó de pagar todo, marcamos el turno como atendido automáticamente
     // (hecho acá en el servidor, no solo en el cliente, para que valga para cualquier llamador de
     // este endpoint — solo si todavía estaba "booked", nunca pisa un "cancelled" ni algo ya manual).
+    // Nunca para un turno futuro: un pago adelantado no significa que la consulta ya ocurrió.
     let marcadoAtendido = false;
-    if (turno.status === 'booked') {
+    if (turno.status === 'booked' && turno.day <= hoyAR()) {
       const estadoNuevo = await estadoPagoTurno(sb, session.empresaId, id);
       if (estadoNuevo.saldoPendiente === 0 && estadoNuevo.precioTotal !== null) {
         await sb.from('turnos_propios').update({ status: 'cumplido' }).eq('id', id).eq('empresa_id', session.empresaId);

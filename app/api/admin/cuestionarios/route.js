@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireDirectorSession } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // Listado de cuestionarios de la empresa (prefiltro, seguimiento, satisfacción, etc.),
 // con la cantidad de respuestas recibidas por cada uno.
 export async function GET(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const sb = supabaseAdmin();
@@ -34,7 +34,7 @@ function slugify(s) {
 }
 
 export async function POST(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const body = await request.json();

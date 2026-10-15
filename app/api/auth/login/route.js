@@ -12,7 +12,7 @@ export async function POST(request) {
     }
     const sb = supabaseAdmin();
     const { data, error } = await sb.rpc('verify_login', { p_username: username, p_password: password });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) { console.error('verify_login', error); return NextResponse.json({ error: 'No se pudo iniciar sesión. Probá de nuevo en un rato.' }, { status: 500 }); }
     if (!data || !data.length) {
       return NextResponse.json({ error: 'Usuario o contraseña incorrectos.' }, { status: 401 });
     }
@@ -23,12 +23,12 @@ export async function POST(request) {
       const { data: empresaRow } = await sb.from('empresas').select('id, slug, nombre, nombre_corto, ciudad, logo_url, color_primario, color_acento, activo')
         .eq('id', user.empresa_id).single();
       if (empresaRow && !empresaRow.activo) {
-        return NextResponse.json({ error: 'Esta cuenta está suspendida. Contactá a NUTRIO.' }, { status: 403 });
+        return NextResponse.json({ error: 'Esta cuenta está suspendida. Contactá a EULALIA.' }, { status: 403 });
       }
       empresa = empresaRow;
     }
 
-    const token = signSession({
+    const token = signSession({ typ: 'staff',
       userId: user.id, username: user.username, role: user.role, name: user.name,
       empresaId: user.empresa_id || null,
       esAdminPlataforma: !!user.es_admin_plataforma,

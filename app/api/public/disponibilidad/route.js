@@ -3,6 +3,8 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { generateSlots, overlapsAny } from '../../../../lib/scheduling';
 import { resolverHorarioDia } from '../../../../lib/horarios';
 import { resolverEmpresaPorSlug } from '../../../../lib/empresas';
+import { hoyAR, horaAR } from '../../../../lib/fechas';
+import { requireEmpresaSession } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,7 @@ export async function GET(request) {
     const profesional = searchParams.get('profesional');
     const fecha = searchParams.get('fecha');
     const duracion = parseInt(searchParams.get('duracion') || '40', 10);
+    if (!(duracion >= 5 && duracion <= 240)) return NextResponse.json({ error: 'Duración inválida.' }, { status: 400 });
     if (!empresaSlug || !profesional || !fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
       return NextResponse.json({ error: 'Faltan parámetros (empresa, profesional, fecha).' }, { status: 400 });
     }
@@ -26,7 +29,13 @@ export async function GET(request) {
     const empresaId = empresa.id;
 
     const { data: cfg } = await sb.from('profesionales_config').select('*').eq('empresa_id', empresaId).eq('nombre', profesional).single();
-    if (!cfg) return NextResponse.json({ error: 'Profesional no encontrado.' }, { status: 404 });
+    if (!cfg || cfg.activo === false) return NextResponse.json({ error: 'Profesional no encontrado.' }, { status: 404 });
+
+    // Al público no se le ofrecen días ni horarios pasados; al personal logueado sí (cargar un turno
+    // que ya ocurrió, o uno de recién).
+    const esPersonal = !requireEmpresaSession(request).error;
+    const hoy = hoyAR();
+    if (!esPersonal && fecha < hoy) return NextResponse.json({ fecha, profesional, horarios: [], atiende: true });
 
     const horarioDia = await resolverHorarioDia(sb, empresaId, profesional, fecha);
     if (!horarioDia.atiende) {
@@ -36,7 +45,7 @@ export async function GET(request) {
     const monthKey = fecha.slice(0, 7);
     const [{ data: periodo }, { data: propios }] = await Promise.all([
       sb.from('periods').select('events').eq('empresa_id', empresaId).eq('month_key', monthKey).single(),
-      sb.from('turnos_propios').select('time, duration').eq('empresa_id', empresaId).eq('day', fecha).eq('resource', profesional)
+      sb.from('turnos_propios').select('time, duration').eq('empresa_id', empresaId).eq('day', fecha).eq('resource', profesional).neq('status', 'cancelled')
     ]);
 
     const existentesImportados = (periodo?.events || [])
@@ -45,7 +54,8 @@ export async function GET(request) {
     const existentes = [...existentesImportados, ...(propios || [])];
 
     const candidatos = generateSlots(horarioDia.horaInicio, horarioDia.horaFin, duracion);
-    const libres = candidatos.filter(h => !overlapsAny(existentes, h, duracion));
+    const ahora = !esPersonal && fecha === hoy ? horaAR() : null;
+    const libres = candidatos.filter(h => (!ahora || h > ahora) && !overlapsAny(existentes, h, duracion));
 
     return NextResponse.json({ fecha, profesional, horarios: libres, atiende: true });
   } catch (err) {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireEmpresaSession, requireDirectorSession } from '../../../../lib/auth';
 import { resumenCobros } from '../../../../lib/cobrosTurno';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +56,7 @@ export async function POST(request) {
 
 // DELETE ?fecha=YYYY-MM-DD: reabre la caja de ese día (por si se cerró por error).
 export async function DELETE(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { searchParams } = new URL(request.url);

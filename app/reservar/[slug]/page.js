@@ -5,8 +5,9 @@ import { LOGO_DATA_URI } from '../../../lib/logo';
 import { fmtMoney } from '../../../lib/stats';
 import LoadingSkeleton from '../../LoadingSkeleton';
 import PlataformaFooter from '../../PlataformaFooter';
+import { hoyAR } from '../../../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 
 export default function ReservarPage({ params }) {
   const slug = params.slug;
@@ -81,7 +82,7 @@ export default function ReservarPage({ params }) {
     }
   }
 
-  const puedeConfirmar = profesional && servicio && fecha && hora && pacienteNombre.trim();
+  const puedeConfirmar = profesional && servicio && fecha && hora && pacienteNombre.trim() && pacienteTelefono.replace(/D/g, '').length >= 8;
   const volvioDePago = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pago') === 'ok';
 
   if (notFound) {
@@ -183,8 +184,8 @@ export default function ReservarPage({ params }) {
             {hora && (
               <>
                 <div className="manual-grid">
-                  <div className="field"><label>Tu nombre</label><input value={pacienteNombre} onChange={e => setPacienteNombre(e.target.value)} /></div>
-                  <div className="field"><label>Tu teléfono (opcional)</label><input value={pacienteTelefono} onChange={e => setPacienteTelefono(e.target.value)} /></div>
+                  <label className="field"><span>Tu nombre y apellido</span><input value={pacienteNombre} onChange={e => setPacienteNombre(e.target.value)} autoComplete="name" /></label>
+                  <label className="field"><span>Tu celular (con código de área)</span><input type="tel" inputMode="tel" autoComplete="tel" placeholder="299 555 1234" value={pacienteTelefono} onChange={e => setPacienteTelefono(e.target.value)} /></label>
                 </div>
                 {empresa?.seniaMonto > 0 && (
                   <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: -4 }}>

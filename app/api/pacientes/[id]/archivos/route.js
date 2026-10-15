@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { requireEmpresaSession } from '../../../../../lib/auth';
+import { hoyAR } from '../../../../../lib/fechas';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export async function POST(request, { params }) {
     const tipo = form.get('tipo');
     const categoria = form.get('categoria') || null;
     const nombre = form.get('nombre') || (file && file.name) || 'Archivo';
-    const fecha = form.get('fecha') || new Date().toISOString().slice(0, 10);
+    const fecha = form.get('fecha') || hoyAR();
 
     if (!file || typeof file === 'string') return NextResponse.json({ error: 'Falta el archivo.' }, { status: 400 });
     if (!['plan', 'bioimpedancia', 'antropometria'].includes(tipo)) {

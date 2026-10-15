@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../../../lib/auth';
+import { requireDirectorSession } from '../../../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // Listado interno de respuestas recibidas para un cuestionario puntual, más recientes primero.
 // ?pacienteId= filtra por un paciente puntual (usado desde la ficha).
 export async function GET(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { searchParams } = new URL(request.url);
@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const body = await request.json();
@@ -35,8 +35,15 @@ export async function PATCH(request, { params }) {
     if (!respuestaId) return NextResponse.json({ error: 'Falta respuestaId.' }, { status: 400 });
     const update = {};
     if (body.revisado) update.revisado_at = new Date().toISOString();
-    if (body.pacienteId !== undefined) update.paciente_id = body.pacienteId;
     const sb = supabaseAdmin();
+    if (body.pacienteId !== undefined) {
+      if (body.pacienteId !== null) {
+        const { data: pac } = await sb.from('pacientes').select('id')
+          .eq('id', body.pacienteId).eq('empresa_id', session.empresaId).maybeSingle();
+        if (!pac) return NextResponse.json({ error: 'Paciente no encontrado.' }, { status: 404 });
+      }
+      update.paciente_id = body.pacienteId;
+    }
     const { error: dbErr } = await sb.from('cuestionario_respuestas').update(update)
       .eq('id', respuestaId).eq('empresa_id', session.empresaId).eq('cuestionario_id', params.id);
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });

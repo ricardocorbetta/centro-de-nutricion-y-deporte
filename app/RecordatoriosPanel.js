@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import LoadingSkeleton from './LoadingSkeleton';
 import PedirContactoModal from './PedirContactoModal';
 import Avatar from './Avatar';
+import { hoyAR } from '../lib/fechas';
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 function addDaysISO(iso, n) {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + n);

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../../lib/auth';
+import { requireDirectorSession } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 const BUCKET = 'biblioteca-cnd';
 
 // PATCH: activar/desactivar contenido (el contenido no se "borra" para no perder el historial de lo publicado).
 export async function PATCH(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;
@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE: borra definitivamente un ítem (y su archivo del storage, si tenía).
 export async function DELETE(request, { params }) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const { id } = params;

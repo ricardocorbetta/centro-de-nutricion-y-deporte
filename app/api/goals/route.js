@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import { requireEmpresaSession } from '../../../lib/auth';
+import { requireEmpresaSession, requireDirectorSession } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const { session, error } = requireEmpresaSession(request);
+  const { session, error } = requireDirectorSession(request);
   if (error) return error;
   try {
     const body = await request.json();

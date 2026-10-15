@@ -8,10 +8,11 @@ import AgendaCrearTurnoModal from './AgendaCrearTurnoModal';
 import ConfirmModal from './ConfirmModal';
 import CobroTurnoModal from './CobroTurnoModal';
 import PedirContactoModal from './PedirContactoModal';
+import { hoyAR } from '../lib/fechas';
 
 const STEP_MIN = 10;
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() { return hoyAR(); }
 function timeToMinutes(t) { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + (m || 0); }
 function minutesToTime(mins) {
   const h = Math.floor(mins / 60).toString().padStart(2, '0');
