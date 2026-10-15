@@ -2,7 +2,7 @@
    Los componentes usan los nombres semánticos (--brand, --text-2, --ok, --danger…). Los nombres
    viejos (--primary, --ink, --sage, --rust…) quedan al final como alias para no romper estilos
    existentes; en código nuevo usar los semánticos.
-   Las fuentes las inyecta next/font en app/layout.js (--font-inter, --font-fraunces, --font-plex). */
+   La fuente la inyecta next/font en app/layout.js (--font-jakarta). */
 
 :root{
   /* Marca (verde salvia) */
@@ -37,10 +37,11 @@
   --shadow-2:0 4px 10px rgba(21,39,42,.07), 0 18px 34px -16px rgba(21,39,42,.24);
   --focus-ring:0 0 0 3px rgba(31,122,104,.35);
 
-  /* Tipografía */
-  --sans:var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --serif:var(--font-fraunces), Georgia, serif;
-  --mono:var(--font-plex), ui-monospace, monospace;
+  /* Tipografía: una sola familia (Plus Jakarta Sans). --serif y --mono quedan como alias de la misma
+     fuente para estilos viejos; los números usan cifras de ancho fijo (tabular-nums) en toda la app. */
+  --sans:var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif:var(--sans);
+  --mono:var(--sans);
 
   --input-bg:var(--surface-2);
   --ease:cubic-bezier(.2,.7,.3,1);

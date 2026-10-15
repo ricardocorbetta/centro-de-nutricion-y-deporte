@@ -35,16 +35,16 @@ export default function AgendaLista({ fecha, setFecha, turnos, loading, errorMsg
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        <button className="icon-btn" onClick={() => setFecha(addDaysISO(fecha, -1))}>◀</button>
+      <div className="agenda-fecha">
+        <button className="icon-btn" aria-label="Día anterior" onClick={() => setFecha(addDaysISO(fecha, -1))}>◀</button>
         <button className={'icon-btn' + (fecha === todayISO() ? ' primary' : '')} onClick={() => setFecha(todayISO())}>Hoy</button>
-        <button className={'icon-btn' + (fecha === addDaysISO(todayISO(), 1) ? ' primary' : '')} onClick={() => setFecha(addDaysISO(todayISO(), 1))}>Mañana</button>
+        <button className={'icon-btn solo-desktop' + (fecha === addDaysISO(todayISO(), 1) ? ' primary' : '')} onClick={() => setFecha(addDaysISO(todayISO(), 1))}>Mañana</button>
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
-        <button className="icon-btn" onClick={() => setFecha(addDaysISO(fecha, 1))}>▶</button>
-        <span style={{ fontSize: 12.5, color: 'var(--ink-soft)', textTransform: 'capitalize' }}>{fechaLarga(fecha)}</span>
+        <button className="icon-btn" aria-label="Día siguiente" onClick={() => setFecha(addDaysISO(fecha, 1))}>▶</button>
+        <span className="agenda-fecha-larga">{fechaLarga(fecha)}</span>
       </div>
 
-      <div className="tabbar" style={{ flexWrap: 'wrap' }}>
+      <div className="tabbar tabbar-scroll">
         {ESTADO_TABS.map(t => (
           <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
             {t.label} {counts[t.id] ? <span style={{ opacity: .6 }}>({counts[t.id]})</span> : ''}

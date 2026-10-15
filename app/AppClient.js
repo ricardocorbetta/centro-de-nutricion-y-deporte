@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LOGO_DATA_URI } from '../lib/logo';
 import {
   DOW_ES, DOW_ORDER, HOURS,
   fmtMoney, fmtMoneyShort, fmtHoras, isPriceConfirmed,
@@ -22,7 +21,7 @@ import CuestionariosAdmin from './CuestionariosAdmin';
 import BibliotecaAdmin from './BibliotecaAdmin';
 import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
-import Avatar from './Avatar';
+import AppShell, { SubNav } from './AppShell';
 import FeedbackBoton from './FeedbackBoton';
 import InicioPendientes from './InicioPendientes';
 
@@ -47,8 +46,6 @@ function DirectorApp({ name, username, empresa }) {
   const [eventsCache, setEventsCache] = useState({}); // { monthKey: { events } | { isManual, manualSummary } }
   const [consumersSummary, setConsumersSummary] = useState({ total_count: 0, data: { weekly: {}, financiadores: {} } });
   const [goals, setGoals] = useState({});
-  const [showConfig, setShowConfig] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
   const [uploadTab, setUploadTab] = useState('csv');
   const [uploadStatus, setUploadStatus] = useState({ msg: '', err: false });
   const [trendStats, setTrendStats] = useState({});
@@ -198,7 +195,6 @@ function DirectorApp({ name, username, empresa }) {
       }
       setCurrentMonth(key);
       setUploadStatus({ msg: `Período ${key} cargado (${events.length} turnos).`, err: false });
-      setTimeout(() => setShowUpload(false), 1400);
     } catch (err) {
       setUploadStatus({ msg: 'Error al procesar: ' + err.message, err: true });
     }
@@ -221,7 +217,6 @@ function DirectorApp({ name, username, empresa }) {
       });
       setCurrentMonth(monthKey);
       setUploadStatus({ msg: `Período ${monthKey} cargado manualmente.`, err: false });
-      setTimeout(() => setShowUpload(false), 1400);
     } catch (err) {
       setUploadStatus({ msg: 'Error al guardar: ' + err.message, err: true });
     }
@@ -241,221 +236,230 @@ function DirectorApp({ name, username, empresa }) {
     <Dashboard
       config={config} periods={periods} currentMonth={currentMonth} setCurrentMonth={setCurrentMonth}
       stats={stats} trendStats={trendStats} goals={goals} saveGoal={saveGoal} saveProfessionalTargets={saveProfessionalTargets}
-      showConfig={showConfig} setShowConfig={setShowConfig}
-      showUpload={showUpload} setShowUpload={setShowUpload}
       uploadTab={uploadTab} setUploadTab={setUploadTab}
       onConsultoriosChange={handleConsultoriosChange} onHorasChange={handleHorasChange}
       onPrecioChange={handlePrecioChange}
       fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
       onUploadCSV={handleUploadCSV} onManualSave={handleManualSave} uploadStatus={uploadStatus}
-      name={name} username={username} onLogout={handleLogout} empresa={empresa}
+      name={name} onLogout={handleLogout} empresa={empresa}
     />
   );
 }
 
+// Secciones del panel de dirección. Cada pantalla ("hoja") pertenece a un destino de la barra
+// superior; Comunicación, Reportes y Configuración agrupan varias hojas con pestañas.
+const DESTINOS_DIRECTOR = [
+  { id: 'inicio', label: 'Inicio', icono: 'inicio' },
+  { id: 'agenda', label: 'Agenda', icono: 'agenda' },
+  { id: 'pacientes', label: 'Pacientes', icono: 'pacientes' },
+  { id: 'caja', label: 'Caja', icono: 'caja' },
+  { id: 'comunicacion', label: 'Comunicación', icono: 'comunicacion' },
+  { id: 'reportes', label: 'Reportes', icono: 'reportes' }
+];
+const HOJAS = {
+  inicio: { destino: 'inicio', label: 'Inicio' },
+  'agenda-director': { destino: 'agenda', label: 'Agenda' },
+  pacientes: { destino: 'pacientes', label: 'Pacientes' },
+  caja: { destino: 'caja', label: 'Caja' },
+  recordatorios: { destino: 'comunicacion', label: 'Recordatorios' },
+  cuestionarios: { destino: 'comunicacion', label: 'Cuestionarios' },
+  biblioteca: { destino: 'comunicacion', label: 'Biblioteca' },
+  cartelera: { destino: 'comunicacion', label: 'Cartelera' },
+  resumen: { destino: 'reportes', label: 'Resumen' },
+  equipo: { destino: 'reportes', label: 'Equipo' },
+  tendencia: { destino: 'reportes', label: 'Tendencia' },
+  oportunidad: { destino: 'reportes', label: 'Oportunidad' },
+  simulador: { destino: 'reportes', label: 'Simulador' },
+  'profesionales-admin': { destino: 'configuracion', label: 'Profesionales' },
+  'config-precios': { destino: 'configuracion', label: 'Precios y capacidad' },
+  'config-carga': { destino: 'configuracion', label: 'Cargar período' },
+  'google-calendar': { destino: 'configuracion', label: 'Google Calendar' },
+  mercadopago: { destino: 'configuracion', label: 'Mercado Pago' }
+};
+const PRIMERA_HOJA = { inicio: 'inicio', agenda: 'agenda-director', pacientes: 'pacientes', caja: 'caja',
+  comunicacion: 'recordatorios', reportes: 'resumen', configuracion: 'profesionales-admin' };
+
+function hojaDeUrl() {
+  if (typeof window === 'undefined') return 'inicio';
+  const s = new URLSearchParams(window.location.search).get('s');
+  return s && HOJAS[s] ? s : 'inicio';
+}
+
+function fmtMes(mk) {
+  if (!mk) return '';
+  const [y, m] = mk.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString('es-AR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 function Dashboard({
   config, periods, currentMonth, setCurrentMonth, stats, trendStats, goals, saveGoal, saveProfessionalTargets,
-  showConfig, setShowConfig, showUpload, setShowUpload, uploadTab, setUploadTab,
+  uploadTab, setUploadTab,
   onConsultoriosChange, onHorasChange, onPrecioChange,
   fileEventsRef, fileConsumersRef, onUploadCSV, onManualSave, uploadStatus,
-  name, username, onLogout, empresa
+  name, onLogout, empresa
 }) {
-  const [activeSection, setActiveSection] = useState('inicio');
+  const [activeSection, setActiveSectionState] = useState('inicio');
+  const ultimaHoja = useRef({});
 
-  // Agrupado por frecuencia de uso real, no por orden de cuándo se construyó cada pantalla:
-  // lo que se usa todos los días arriba, los reportes que se consultan de tanto en tanto en el
-  // medio, y lo que se toca una vez y no se vuelve a tocar (configuración) al final.
-  const NAV_GROUPS = [
-    { label: 'Operación diaria', items: [
-      { id: 'inicio', label: 'Inicio', icon: '🏠' },
-      { id: 'agenda-director', label: 'Agenda', icon: '📅' },
-      { id: 'recordatorios', label: 'Recordatorios', icon: '💬' },
-      { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
-      { id: 'cuestionarios', label: 'Cuestionarios', icon: '📋' },
-      { id: 'biblioteca', label: 'Biblioteca', icon: '📚' },
-      { id: 'cartelera', label: 'Cartelera', icon: '📣' },
-      { id: 'caja', label: 'Caja', icon: '💵' },
-    ]},
-    { label: 'Reportes', items: [
-      { id: 'resumen', label: 'Resumen', icon: '📊' },
-      { id: 'equipo', label: 'Equipo', icon: '👥' },
-      ...(periods.length >= 2 ? [{ id: 'tendencia', label: 'Tendencia', icon: '📈' }] : []),
-      { id: 'oportunidad', label: 'Oportunidad', icon: '🎯' },
-      { id: 'simulador', label: 'Simulador', icon: '🧮' },
-    ]},
-    { label: 'Configuración', items: [
-      { id: 'profesionales-admin', label: 'Profesionales', icon: '🩺' },
-      { id: 'google-calendar', label: 'Google Calendar', icon: '🗓️' },
-      { id: 'mercadopago', label: 'Mercado Pago', icon: '💳' },
-    ]},
-  ];
-  const NAV = NAV_GROUPS.flatMap(g => g.items);
+  // La sección vive en la URL (?s=...): recargar no te saca de donde estabas y "atrás" funciona.
+  useEffect(() => {
+    setActiveSectionState(hojaDeUrl());
+    function onPop() { setActiveSectionState(hojaDeUrl()); }
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  function setActiveSection(hoja) {
+    if (!HOJAS[hoja]) return;
+    ultimaHoja.current[HOJAS[hoja].destino] = hoja;
+    setActiveSectionState(hoja);
+    const url = hoja === 'inicio' ? window.location.pathname : `${window.location.pathname}?s=${hoja}`;
+    if (url !== window.location.pathname + window.location.search) window.history.pushState(null, '', url);
+  }
+  function irADestino(destino) { setActiveSection(ultimaHoja.current[destino] || PRIMERA_HOJA[destino]); }
+
+  const destinoActivo = HOJAS[activeSection]?.destino || 'inicio';
+  const hojasDe = destino => Object.entries(HOJAS)
+    .filter(([id, h]) => h.destino === destino && (id !== 'tendencia' || periods.length >= 2))
+    .map(([id, h]) => ({ id, label: h.label }));
 
   const necesitaStats = ['resumen', 'equipo', 'simulador', 'oportunidad'].includes(activeSection);
+  const selectorMes = periods.length > 0 && (
+    <label className="selector-mes">
+      <span>Mes</span>
+      <select value={currentMonth || ''} onChange={e => setCurrentMonth(e.target.value)}>
+        {periods.map(p => <option key={p.month_key} value={p.month_key}>{fmtMes(p.month_key)}{p.is_manual ? ' (carga manual)' : ''}</option>)}
+      </select>
+    </label>
+  );
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <div className="topbar-brand">
-            <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
-            <div className="topbar-title">
-              <span className="app-name">EULALIA</span>
-              <span className="app-sub">{empresa?.nombre || 'Panel de gestión'}</span>
-            </div>
-          </div>
-          <div className="topbar-spacer" />
-          <select className="pill-select" value={currentMonth || ''} onChange={e => setCurrentMonth(e.target.value)}>
-            {periods.map(p => <option key={p.month_key} value={p.month_key}>{p.month_key}{p.is_manual ? ' (manual)' : ''}</option>)}
-          </select>
-          <button className={'icon-btn' + (showConfig ? ' active' : '')} onClick={() => setShowConfig(v => !v)}>⚙ Configurar</button>
-          <button className={showUpload ? 'icon-btn active' : 'icon-btn primary'} onClick={() => setShowUpload(v => !v)}>
-            {showUpload ? '✕ Cerrar carga' : '+ Cargar período'}
-          </button>
-          <span className="user-chip"><Avatar nombre={name} size={26} /><span className="nombre">{name}</span></span>
-          <button className="icon-btn" onClick={onLogout}>Salir</button>
+    <AppShell empresa={empresa} nombre={name} rol="director"
+      destinos={DESTINOS_DIRECTOR} activo={destinoActivo}
+      onIr={irADestino}
+      menu={[
+        { id: 'configuracion', label: 'Configuración', icono: 'configuracion', onClick: () => irADestino('configuracion') },
+        { id: 'sugerencias', label: 'Sugerencias', icono: 'sugerencias', onClick: () => window.dispatchEvent(new CustomEvent('abrir-sugerencias')) },
+        { id: 'salir', label: 'Salir', icono: 'salir', onClick: onLogout }
+      ]}>
+
+      {['comunicacion', 'reportes', 'configuracion'].includes(destinoActivo) && (
+        <SubNav items={hojasDe(destinoActivo)} activo={activeSection} onIr={setActiveSection}
+          extra={destinoActivo === 'reportes' ? selectorMes : null} />
+      )}
+
+      {activeSection === 'inicio' && (
+        <InicioPendientes nombre={name}
+          onIr={s => setActiveSection(s === 'agenda' ? 'agenda-director' : s)} />
+      )}
+
+      {activeSection === 'agenda-director' && (
+        <section><div className="card"><AgendaBuilder empresaSlug={empresa?.slug} /></div></section>
+      )}
+
+      {activeSection === 'recordatorios' && (
+        <section><div className="card"><RecordatoriosPanel empresaNombre={empresa?.nombre} /></div></section>
+      )}
+
+      {activeSection === 'pacientes' && (
+        <section><div className="card">
+          <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} empresaSlug={empresa?.slug} />
+        </div></section>
+      )}
+
+      {activeSection === 'cuestionarios' && (
+        <section><div className="card"><CuestionariosAdmin empresaSlug={empresa?.slug} /></div></section>
+      )}
+
+      {activeSection === 'biblioteca' && (
+        <section><div className="card"><BibliotecaAdmin empresaSlug={empresa?.slug} /></div></section>
+      )}
+
+      {activeSection === 'cartelera' && (
+        <section><div className="card"><CarteleraAdmin empresaSlug={empresa?.slug} /></div></section>
+      )}
+
+      {necesitaStats && !stats ? (
+        <div className="kpi-grid">
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="kpi skeleton" style={{ height: 92 }} />)}
         </div>
-      </div>
-
-      <div className="mobile-tabs">
-        {NAV.map(n => (
-          <button key={n.id} className={activeSection === n.id ? 'active' : ''} onClick={() => setActiveSection(n.id)}>
-            <span aria-hidden="true">{n.icon}</span> {n.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="app-shell">
-        <aside className="sidebar">
-          {NAV_GROUPS.map(g => (
-            <div key={g.label} className="sidebar-group">
-              <div className="sidebar-group-label">{g.label}</div>
-              {g.items.map(n => (
-                <button key={n.id} className={'sidebar-link' + (activeSection === n.id ? ' active' : '')} onClick={() => setActiveSection(n.id)} title={n.label}>
-                  <span className="sidebar-link-icon" aria-hidden="true">{n.icon}</span>
-                  <span className="sidebar-link-label">{n.label}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </aside>
-
-        <main className="wrap" style={{ flex: 1, minWidth: 0 }}>
-          {showConfig && (
-            <section className="card">
-              <ConfigPanel config={config} onConsultoriosChange={onConsultoriosChange}
-                onHorasChange={onHorasChange} onPrecioChange={onPrecioChange} />
-            </section>
-          )}
-
-          {showUpload && (
-            <section className="card">
-              <UploadPanel uploadTab={uploadTab} setUploadTab={setUploadTab}
-                fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
-                onUploadCSV={onUploadCSV} onManualSave={onManualSave} uploadStatus={uploadStatus} />
-            </section>
-          )}
-
-          {activeSection === 'inicio' && (
-            <InicioPendientes nombre={name}
-              onIr={s => setActiveSection(s === 'agenda' ? 'agenda-director' : s)} />
-          )}
-
-          {activeSection === 'agenda-director' && (
-            <section><div className="card"><AgendaBuilder empresaSlug={empresa?.slug} /></div></section>
-          )}
-
-          {activeSection === 'recordatorios' && (
-            <section><div className="card"><RecordatoriosPanel empresaNombre={empresa?.nombre} /></div></section>
-          )}
-
-          {activeSection === 'pacientes' && (
-            <section><div className="card">
-              <PacientesPanel statsSlot={stats ? <StatusPatientsSection stats={stats} /> : null} empresaSlug={empresa?.slug} />
-            </div></section>
-          )}
-
-          {activeSection === 'cuestionarios' && (
-            <section><div className="card"><CuestionariosAdmin empresaSlug={empresa?.slug} /></div></section>
-          )}
-
-          {activeSection === 'biblioteca' && (
-            <section><div className="card"><BibliotecaAdmin empresaSlug={empresa?.slug} /></div></section>
-          )}
-
-          {activeSection === 'cartelera' && (
-            <section><div className="card"><CarteleraAdmin empresaSlug={empresa?.slug} /></div></section>
-          )}
-
-          {necesitaStats && !stats ? (
-            <div className="kpi-grid">
-              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="kpi skeleton" style={{ height: 92 }} />)}
-            </div>
-          ) : (
+      ) : (
+        <>
+          {activeSection === 'resumen' && stats && (
             <>
-              {activeSection === 'resumen' && stats && (
-                <>
-                  <section><div className="card"><KPISection stats={stats} /></div></section>
-                  <section><div className="card">
-                    <CapacitySection stats={stats} goal={goals[currentMonth]} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
-                  </div></section>
-                </>
-              )}
-
-              {activeSection === 'equipo' && stats && !stats.isManual && (
-                <>
-                  <section><div className="card"><ResourceServiceSection stats={stats} /></div></section>
-                  <section><div className="card">
-                    <ObjetivosEquipoSection stats={stats} goal={goals[currentMonth]}
-                      onSave={(profTargets) => saveProfessionalTargets(currentMonth, profTargets)} />
-                  </div></section>
-                  <section><div className="card"><HeatmapSection stats={stats} /></div></section>
-                </>
-              )}
-              {activeSection === 'equipo' && stats?.isManual && (
-                <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no tiene desglose por profesional.</p>
-              )}
-
-              {activeSection === 'simulador' && stats && (
-                <section><div className="card">
-                  <SimulatorSection stats={stats} config={config} currentMonth={currentMonth} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
-                </div></section>
-              )}
-
-              {activeSection === 'oportunidad' && stats && !stats.isManual && (
-                <section><div className="card"><RecoSection stats={stats} trendStats={trendStats} periods={periods} /></div></section>
-              )}
-              {activeSection === 'oportunidad' && stats?.isManual && (
-                <p style={{ color: 'var(--ink-faint)' }}>Este período se cargó manualmente — no hay datos suficientes para recomendaciones.</p>
-              )}
+              <section><div className="card"><KPISection stats={stats} /></div></section>
+              <section><div className="card">
+                <CapacitySection key={currentMonth} stats={stats} goal={goals[currentMonth]} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
+              </div></section>
             </>
           )}
 
-          {activeSection === 'tendencia' && periods.length >= 2 && (
-            <section><div className="card"><TrendSection periods={periods} trendStats={trendStats} /></div></section>
+          {activeSection === 'equipo' && stats && !stats.isManual && (
+            <>
+              <section><div className="card"><ResourceServiceSection stats={stats} /></div></section>
+              <section><div className="card">
+                <ObjetivosEquipoSection key={currentMonth} stats={stats} goal={goals[currentMonth]}
+                  onSave={(profTargets) => saveProfessionalTargets(currentMonth, profTargets)} />
+              </div></section>
+              <section><div className="card"><HeatmapSection stats={stats} /></div></section>
+            </>
+          )}
+          {activeSection === 'equipo' && stats?.isManual && (
+            <p className="nota-suave">Este mes se cargó a mano: no tiene desglose por profesional.</p>
           )}
 
-          {activeSection === 'caja' && (
-            <section><div className="card"><CajaComisionesSection /></div></section>
+          {activeSection === 'simulador' && stats && (
+            <section><div className="card">
+              <SimulatorSection key={currentMonth} stats={stats} config={config} currentMonth={currentMonth} onSaveGoal={(rt, ot) => saveGoal(currentMonth, rt, ot)} />
+            </div></section>
           )}
 
-          {activeSection === 'profesionales-admin' && (
-            <section><div className="card"><ProfesionalesAdmin /></div></section>
+          {activeSection === 'oportunidad' && stats && !stats.isManual && (
+            <section><div className="card"><RecoSection stats={stats} trendStats={trendStats} periods={periods} /></div></section>
           )}
-
-          {activeSection === 'google-calendar' && (
-            <section><div className="card"><GoogleCalendarConfig /></div></section>
+          {activeSection === 'oportunidad' && stats?.isManual && (
+            <p className="nota-suave">Este mes se cargó a mano: no hay datos suficientes para recomendaciones.</p>
           )}
+        </>
+      )}
 
-          {activeSection === 'mercadopago' && (
-            <section><div className="card"><MercadoPagoConfig /></div></section>
-          )}
+      {activeSection === 'tendencia' && periods.length >= 2 && (
+        <section><div className="card"><TrendSection periods={periods} trendStats={trendStats} /></div></section>
+      )}
 
-          <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
-        </main>
-      </div>
-      <FeedbackBoton pantalla={NAV.find(n => n.id === activeSection)?.label || activeSection} />
-    </>
+      {activeSection === 'caja' && (
+        <section><div className="card"><CajaComisionesSection /></div></section>
+      )}
+
+      {activeSection === 'profesionales-admin' && (
+        <section><div className="card"><ProfesionalesAdmin /></div></section>
+      )}
+
+      {activeSection === 'config-precios' && (
+        <section className="card">
+          <ConfigPanel config={config} onConsultoriosChange={onConsultoriosChange}
+            onHorasChange={onHorasChange} onPrecioChange={onPrecioChange} />
+        </section>
+      )}
+
+      {activeSection === 'config-carga' && (
+        <section className="card">
+          <UploadPanel uploadTab={uploadTab} setUploadTab={setUploadTab}
+            fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
+            onUploadCSV={onUploadCSV} onManualSave={onManualSave} uploadStatus={uploadStatus} />
+        </section>
+      )}
+
+      {activeSection === 'google-calendar' && (
+        <section><div className="card"><GoogleCalendarConfig /></div></section>
+      )}
+
+      {activeSection === 'mercadopago' && (
+        <section><div className="card"><MercadoPagoConfig /></div></section>
+      )}
+
+      <FeedbackBoton pantalla={HOJAS[activeSection]?.label || activeSection} />
+    </AppShell>
   );
 }
 

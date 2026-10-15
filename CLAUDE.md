@@ -67,7 +67,14 @@ Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.
   `--ok`/`--warn`/`--danger`/`--info` (cada uno con `-soft` y `-ink`), `--r-sm/md/lg`, `--shadow-1/2`,
   `--focus-ring`. Modo oscuro incluido. Los nombres viejos (`--primary`, `--ink`, `--rust`…) son alias:
   en código nuevo usar los semánticos. Nada de colores fijos (#fff, #1F7A68) en componentes.
-- Fuentes con `next/font` en `app/layout.js` (Inter, Fraunces para títulos, IBM Plex Mono).
+- Tipografía: una sola, Plus Jakarta Sans con `next/font` (`app/layout.js`), con cifras de ancho fijo en
+  toda la app. Nada de serif ni monoespaciada (`--serif`/`--mono` son alias de la misma fuente).
+- Navegación (`app/AppShell.js`): barra superior con 6 destinos (Inicio, Agenda, Pacientes, Caja,
+  Comunicación, Reportes) y menú del avatar (Configuración, Sugerencias, Salir). En celular (≤ 900px), barra
+  inferior con 4 destinos + "Más". Comunicación, Reportes y Configuración tienen pestañas (`SubNav`). La
+  pantalla activa va en la URL (`?s=<hoja>`, ver `HOJAS` en `app/AppClient.js`). No volver a una barra
+  lateral ni a emojis como íconos: los íconos son de línea, en `app/Icono.js`.
+- Clase `.solo-desktop` para ocultar textos o botones secundarios en pantallas de ≤ 640px.
 - Clases en `app/globals.css`: `.tag` (`.sage`, `.rust`, `.gold`, `.info`), `.avatar`, `.card`, `.kpi-grid`,
   `.section-head`, `.empty-state`, `.prof-card`, `.icon-btn` (`.primary`, `.destructivo`).
 - Pantalla de entrada "Inicio" (`app/InicioPendientes.js` + `/api/pendientes`): pendientes agrupados en

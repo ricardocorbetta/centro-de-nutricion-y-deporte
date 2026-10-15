@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LOGO_DATA_URI } from '../lib/logo';
 import { fmtMoney } from '../lib/stats';
 import AgendaBuilder from './AgendaBuilder';
 import PacienteSelector from './PacienteSelector';
+import AppShell from './AppShell';
 import Avatar from './Avatar';
 import FeedbackBoton from './FeedbackBoton';
 import InicioPendientes from './InicioPendientes';
@@ -115,29 +115,17 @@ export default function SecretariaView({ name, username, empresa }) {
   }
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-inner">
-          <div className="topbar-brand">
-            <img src={empresa?.logoUrl || LOGO_DATA_URI} alt={empresa?.nombreCorto || 'logo'} />
-            <div className="topbar-title">
-              <span className="app-name">Gestión diaria</span>
-              <span className="app-sub">{empresa?.nombre || ''}</span>
-            </div>
-          </div>
-          <div className="topbar-spacer" />
-          <span className="user-chip"><Avatar nombre={name} size={26} /><span className="nombre">{name}</span></span>
-          <button className="icon-btn" onClick={handleLogout}>Salir</button>
-        </div>
-      </div>
-
-      <div className="mobile-tabs" style={{ display: 'flex' }}>
-        <button className={tab === 'inicio' ? 'active' : ''} onClick={() => setTab('inicio')}>Inicio</button>
-        <button className={tab === 'agenda' ? 'active' : ''} onClick={() => setTab('agenda')}>Agenda</button>
-        <button className={tab === 'caja' ? 'active' : ''} onClick={() => setTab('caja')}>Caja del día</button>
-      </div>
-
-      <div className="wrap">
+    <AppShell empresa={empresa} nombre={name} rol="secretaria"
+      destinos={[
+        { id: 'inicio', label: 'Inicio', icono: 'inicio' },
+        { id: 'agenda', label: 'Agenda', icono: 'agenda' },
+        { id: 'caja', label: 'Caja del día', icono: 'caja' }
+      ]}
+      activo={tab} onIr={setTab}
+      menu={[
+        { id: 'sugerencias', label: 'Sugerencias', icono: 'sugerencias', onClick: () => window.dispatchEvent(new CustomEvent('abrir-sugerencias')) },
+        { id: 'salir', label: 'Salir', icono: 'salir', onClick: handleLogout }
+      ]}>
         {tab === 'inicio' && <InicioPendientes nombre={name} onIr={s => setTab(s === 'caja' ? 'caja' : 'agenda')} />}
 
         {tab === 'agenda' && (
@@ -212,10 +200,8 @@ export default function SecretariaView({ name, username, empresa }) {
           </>
         )}
 
-        <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
-      </div>
       <FeedbackBoton pantalla={{ inicio: 'Inicio (secretaría)', agenda: 'Agenda (secretaría)', caja: 'Caja (secretaría)' }[tab]} />
-    </>
+    </AppShell>
   );
 }
 

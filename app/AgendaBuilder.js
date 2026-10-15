@@ -199,8 +199,7 @@ export default function AgendaBuilder({ empresaSlug }) {
 
   return (
     <>
-      <div className="section-head"><span className="dot" /><h2>Agenda</h2>
-        <span className="note">armado de turnos por profesional</span></div>
+      <div className="section-head"><h2>Agenda</h2></div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 10 }}>
         <div className="tabbar" style={{ marginBottom: 0 }}>
@@ -211,7 +210,7 @@ export default function AgendaBuilder({ empresaSlug }) {
 
         <div style={{ display: 'flex', gap: 10 }}>
           <div style={{ position: 'relative' }}>
-            <button className="icon-btn" onClick={() => setCompartirMenuOpen(v => !v)}>Compartir por WhatsApp ▾</button>
+            <button className="icon-btn" onClick={() => setCompartirMenuOpen(v => !v)}>Compartir<span className="solo-desktop"> por WhatsApp</span> ▾</button>
             {compartirMenuOpen && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setCompartirMenuOpen(false)} />
