@@ -5,6 +5,8 @@ import { MODALIDADES } from '../lib/agendaEstados';
 import PacienteSelector from './PacienteSelector';
 import SidePanel from './SidePanel';
 import { hoyAR } from '../lib/fechas';
+import { resumenHorarios } from '../lib/disponibilidad';
+import SelectorDias from './SelectorDias';
 
 function todayISO() { return hoyAR(); }
 
@@ -84,6 +86,22 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, empresaSlug, profesional, servicio, fecha, svcData?.duracion]);
 
+  // Próximos 14 días con lugar para el profesional y servicio elegidos (tira de días).
+  const [diasLibres, setDiasLibres] = useState(null);
+  const [cargandoDias, setCargandoDias] = useState(false);
+  useEffect(() => {
+    if (!open || !empresaSlug || !profesional || !svcData) { setDiasLibres(null); return; }
+    let cancelado = false;
+    setCargandoDias(true);
+    fetch(`/api/public/disponibilidad-rango?empresa=${encodeURIComponent(empresaSlug)}&profesional=${encodeURIComponent(profesional)}&duracion=${svcData.duracion}&desde=${todayISO()}&dias=14`)
+      .then(r => r.json())
+      .then(data => { if (!cancelado) setDiasLibres(data.dias || []); })
+      .catch(() => { if (!cancelado) setDiasLibres([]); })
+      .finally(() => { if (!cancelado) setCargandoDias(false); });
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, empresaSlug, profesional, svcData?.duracion]);
+
   const puedeGuardar = fecha && hora && profesional && servicio && paciente;
 
   async function confirmar() {
@@ -121,6 +139,11 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
               {profesionales.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
             </select>
           </div>
+          {profData && (
+            <p className="prof-horario-linea" style={{ gridColumn: '1 / -1', marginTop: -4 }}>
+              {resumenHorarios(profData.horarios) ? 'Atiende ' + resumenHorarios(profData.horarios) : 'Sin horario de atención cargado.'}
+            </p>
+          )}
           <div className="field" style={{ gridColumn: '1 / -1' }}><label>Servicio</label>
             <select value={servicio} onChange={e => { setServicio(e.target.value); setHora(''); }} disabled={!profData}>
               <option value="">{profData ? 'Elegí un servicio' : 'Elegí primero un profesional'}</option>
@@ -131,6 +154,14 @@ export default function AgendaCrearTurnoModal({ open, onClose, profesionales, in
               ))}
             </select>
           </div>
+
+          {profesional && servicio && (
+            <div className="field" style={{ gridColumn: '1 / -1' }}>
+              <label>Próximos días con lugar</label>
+              <SelectorDias dias={diasLibres || []} cargando={cargandoDias} seleccionada={fecha}
+                onElegir={d => { setFecha(d); setHora(''); }} />
+            </div>
+          )}
 
           <div className="field" style={{ gridColumn: '1 / -1' }}>
             <label>Horario disponible</label>

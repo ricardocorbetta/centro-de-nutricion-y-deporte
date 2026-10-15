@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif"
+      background: 'var(--bg)', fontFamily: 'var(--sans)'
     }}>
       <form onSubmit={handleSubmit} className="card" style={{
         padding: '36px 32px', width: 340, boxShadow: 'var(--shadow)'

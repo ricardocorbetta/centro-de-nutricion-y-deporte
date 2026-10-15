@@ -79,7 +79,7 @@ export default function PortalPage({ params }) {
   const colorPrimario = me?.empresa?.colorPrimario || 'var(--primary)';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '28px 18px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
           <img src={marca?.logoUrl || LOGO_DATA_URI} alt="" style={{ height: 34 }} />

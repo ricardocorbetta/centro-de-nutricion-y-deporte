@@ -131,7 +131,7 @@ export default function CuestionarioPublico({ empresaSlug, cuestionarioSlug }) {
 
 function Shell({ empresa, titulo, children }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)' }}>
       <div className="topbar">
         <div className="topbar-inner">
           <div className="topbar-brand">

@@ -32,7 +32,7 @@ export default function CarteleraPage({ params }) {
   const telWhatsapp = (empresa?.whatsappAdmin || '').replace(/\D/g, '');
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg, #F4F7F6)', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)' }}>
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '28px 18px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
           <img src={empresa?.logoUrl || LOGO_DATA_URI} alt="" style={{ height: 36 }} />

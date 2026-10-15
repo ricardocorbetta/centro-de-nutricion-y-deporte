@@ -92,6 +92,23 @@ test('la disponibilidad pública no ofrece días pasados ni duraciones absurdas'
   assert.equal((await pedir(`/api/public/disponibilidad?empresa=${EMPRESA}&profesional=NoExiste&fecha=2030-01-07&duracion=40`)).status, 404);
 });
 
+test('la disponibilidad por rango devuelve días futuros con sus turnos libres', async () => {
+  const prof = (await pedir('/api/public/profesionales?empresa=' + EMPRESA)).cuerpo.profesionales[0];
+  const dur = prof.servicios[0]?.duracion || 40;
+  const q = `/api/public/disponibilidad-rango?empresa=${EMPRESA}&profesional=${encodeURIComponent(prof.nombre)}&duracion=${dur}`;
+  const r = await pedir(q + '&desde=2020-01-01&dias=10');
+  assert.equal(r.status, 200);
+  assert.equal(r.cuerpo.dias.length, 10);
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+  assert.ok(r.cuerpo.dias[0].fecha >= hoy, 'al público no le muestra días pasados');
+  for (const d of r.cuerpo.dias) {
+    assert.equal(d.libres, d.horarios.length);
+    if (!d.atiende) assert.equal(d.libres, 0);
+  }
+  assert.equal((await pedir(q + '&dias=500')).cuerpo.dias.length, 31, 'tope de 31 días');
+  assert.equal((await pedir(`/api/public/disponibilidad-rango?empresa=${EMPRESA}&profesional=NoExiste&duracion=40`)).status, 404);
+});
+
 test('la reserva pública rechaza datos inválidos antes de guardar nada', async () => {
   const prof = (await pedir('/api/public/profesionales?empresa=' + EMPRESA)).cuerpo.profesionales[0];
   const base = { empresa: EMPRESA, profesional: prof.nombre, servicio: prof.servicios[0]?.nombre || 'x', hora: '10:00', pacienteNombre: 'Prueba automática' };
