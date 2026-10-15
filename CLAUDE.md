@@ -61,8 +61,22 @@ Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.
   `/prefiltro/<empresa>`, `/cuestionario/<empresa>/<slug>`.
 
 ## Convenciones de diseño
-- Tokens en `app/globals.css`: títulos en serif Fraunces, `--shadow`, radios, `.tag` (`.sage`, `.rust`,
-  `.gold`), `.avatar`, `.card`, `.kpi-grid`, `.section-head`, `.empty-state`, `.prof-card`. Tiene modo oscuro.
+- Estética inspirada en Balenzano (sus patrones, no su CSS: allá hay 70 hojas con `!important`).
+- Tokens SOLO en `app/tokens.css`, con nombres semánticos: `--brand`/`--brand-strong`/`--brand-soft`/
+  `--on-brand`, `--surface`/`--surface-2`, `--line`/`--line-strong`, `--text`/`--text-2`/`--text-3`,
+  `--ok`/`--warn`/`--danger`/`--info` (cada uno con `-soft` y `-ink`), `--r-sm/md/lg`, `--shadow-1/2`,
+  `--focus-ring`. Modo oscuro incluido. Los nombres viejos (`--primary`, `--ink`, `--rust`…) son alias:
+  en código nuevo usar los semánticos. Nada de colores fijos (#fff, #1F7A68) en componentes.
+- Fuentes con `next/font` en `app/layout.js` (Inter, Fraunces para títulos, IBM Plex Mono).
+- Clases en `app/globals.css`: `.tag` (`.sage`, `.rust`, `.gold`, `.info`), `.avatar`, `.card`, `.kpi-grid`,
+  `.section-head`, `.empty-state`, `.prof-card`, `.icon-btn` (`.primary`, `.destructivo`).
+- Pantalla de entrada "Inicio" (`app/InicioPendientes.js` + `/api/pendientes`): pendientes agrupados en
+  Vencido / Hoy / Próximos 7 días / Más adelante. Para sumar un tipo de pendiente, agregarlo en la API con
+  la forma `{ id, tipo, titulo, detalle, fecha, seccion, accion }`.
+- Avisos de guardado globales (`app/AvisosGlobales.js`): todo POST/PUT/PATCH/DELETE a `/api/` muestra
+  "Cambios guardados" o el `error` del servidor. Si una pantalla ya muestra su propio mensaje, mandar el
+  header `x-sin-aviso`. Avisos manuales: `window.dispatchEvent(new CustomEvent('aviso', { detail: { texto, tipo } }))`.
+- Las API devuelven errores como `{ error: 'mensaje para la persona' }`, nunca el mensaje técnico de Postgres.
 - Cero modales: todo se hace con el panel lateral `app/SidePanel.js`. `ConfirmModal`, `PedirContactoModal`,
   `CobroTurnoModal`, etc. ya usan SidePanel por dentro (el nombre "Modal" quedó por historia).
 - Evitar rótulos en mayúsculas con tracking, badges de solo emoji y el aspecto "plantilla".

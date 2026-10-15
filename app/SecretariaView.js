@@ -8,6 +8,7 @@ import AgendaBuilder from './AgendaBuilder';
 import PacienteSelector from './PacienteSelector';
 import Avatar from './Avatar';
 import FeedbackBoton from './FeedbackBoton';
+import InicioPendientes from './InicioPendientes';
 import { hoyAR } from '../lib/fechas';
 
 function todayISO() { return hoyAR(); }
@@ -16,7 +17,7 @@ const MEDIOS_PAGO = ['Efectivo', 'Transferencia', 'Débito', 'Crédito', 'Mercad
 
 export default function SecretariaView({ name, username, empresa }) {
   const router = useRouter();
-  const [tab, setTab] = useState('agenda');
+  const [tab, setTab] = useState('inicio');
 
   const [cobros, setCobros] = useState([]);
   const [form, setForm] = useState({
@@ -131,11 +132,14 @@ export default function SecretariaView({ name, username, empresa }) {
       </div>
 
       <div className="mobile-tabs" style={{ display: 'flex' }}>
+        <button className={tab === 'inicio' ? 'active' : ''} onClick={() => setTab('inicio')}>Inicio</button>
         <button className={tab === 'agenda' ? 'active' : ''} onClick={() => setTab('agenda')}>Agenda</button>
         <button className={tab === 'caja' ? 'active' : ''} onClick={() => setTab('caja')}>Caja del día</button>
       </div>
 
       <div className="wrap">
+        {tab === 'inicio' && <InicioPendientes nombre={name} onIr={s => setTab(s === 'caja' ? 'caja' : 'agenda')} />}
+
         {tab === 'agenda' && (
           <section><div className="card">
             <AgendaBuilder empresaSlug={empresa?.slug} />
@@ -210,7 +214,7 @@ export default function SecretariaView({ name, username, empresa }) {
 
         <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
       </div>
-      <FeedbackBoton pantalla={tab === 'agenda' ? 'Agenda (secretaría)' : 'Caja (secretaría)'} />
+      <FeedbackBoton pantalla={{ inicio: 'Inicio (secretaría)', agenda: 'Agenda (secretaría)', caja: 'Caja (secretaría)' }[tab]} />
     </>
   );
 }

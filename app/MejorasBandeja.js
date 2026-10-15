@@ -97,7 +97,7 @@ function DetallePlataforma({ mejora, onCambio }) {
   async function enviar(url, method, body, okMsg) {
     setEstado({ ocupado: true, msg: '', err: false });
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'x-sin-aviso': '1' }, body: JSON.stringify(body) });
       const data = await leerJson(res);
       if (!res.ok) throw new Error(data.error || 'No se pudo guardar.');
       setEstado({ ocupado: false, msg: okMsg, err: false });

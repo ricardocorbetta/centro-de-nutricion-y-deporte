@@ -24,6 +24,7 @@ import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
 import Avatar from './Avatar';
 import FeedbackBoton from './FeedbackBoton';
+import InicioPendientes from './InicioPendientes';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
   if (esAdminPlataforma) return <XenomAdmin name={name} username={username} />;
@@ -259,13 +260,14 @@ function Dashboard({
   fileEventsRef, fileConsumersRef, onUploadCSV, onManualSave, uploadStatus,
   name, username, onLogout, empresa
 }) {
-  const [activeSection, setActiveSection] = useState('agenda-director');
+  const [activeSection, setActiveSection] = useState('inicio');
 
   // Agrupado por frecuencia de uso real, no por orden de cuándo se construyó cada pantalla:
   // lo que se usa todos los días arriba, los reportes que se consultan de tanto en tanto en el
   // medio, y lo que se toca una vez y no se vuelve a tocar (configuración) al final.
   const NAV_GROUPS = [
     { label: 'Operación diaria', items: [
+      { id: 'inicio', label: 'Inicio', icon: '🏠' },
       { id: 'agenda-director', label: 'Agenda', icon: '📅' },
       { id: 'recordatorios', label: 'Recordatorios', icon: '💬' },
       { id: 'pacientes', label: 'Pacientes', icon: '🧑‍⚕️' },
@@ -352,6 +354,11 @@ function Dashboard({
                 fileEventsRef={fileEventsRef} fileConsumersRef={fileConsumersRef}
                 onUploadCSV={onUploadCSV} onManualSave={onManualSave} uploadStatus={uploadStatus} />
             </section>
+          )}
+
+          {activeSection === 'inicio' && (
+            <InicioPendientes nombre={name}
+              onIr={s => setActiveSection(s === 'agenda' ? 'agenda-director' : s)} />
           )}
 
           {activeSection === 'agenda-director' && (

@@ -1,0 +1,93 @@
+/* Tokens de diseño de EULALIA: ÚNICA fuente de colores, tipografías, radios y sombras.
+   Los componentes usan los nombres semánticos (--brand, --text-2, --ok, --danger…). Los nombres
+   viejos (--primary, --ink, --sage, --rust…) quedan al final como alias para no romper estilos
+   existentes; en código nuevo usar los semánticos.
+   Las fuentes las inyecta next/font en app/layout.js (--font-inter, --font-fraunces, --font-plex). */
+
+:root{
+  /* Marca (verde salvia) */
+  --brand:#1F7A68;
+  --brand-strong:#123B34;
+  --brand-soft:#DCEEE7;
+  --on-brand:#FFFFFF;          /* texto sobre fondo --brand */
+
+  /* Superficies y líneas */
+  --bg:#F4F7F6;
+  --surface:#FFFFFF;
+  --surface-2:#EEF3F1;
+  --line:#E3EAE7;
+  --line-strong:#D3DEDA;
+
+  /* Texto: principal, secundario, terciario (este último ≥ 4.5:1 sobre blanco) */
+  --text:#15272A;
+  --text-2:#55686A;
+  --text-3:#6B7C7D;
+
+  /* Estados semánticos, cada uno con fondo suave y tinta legible sobre ese fondo */
+  --ok:#2F8F72;      --ok-soft:#DDF0E5;     --ok-ink:#1F6B54;
+  --warn:#B08A54;    --warn-soft:#F3E9D6;   --warn-ink:#73562A;
+  --danger:#C0562F;  --danger-soft:#FBE6DA; --danger-ink:#9A3F1E;
+  --info:#3A6EA5;    --info-soft:#E1EBF6;   --info-ink:#2B5482;
+
+  /* Forma */
+  --r-sm:9px;
+  --r-md:14px;
+  --r-lg:18px;
+  --shadow-1:0 1px 3px rgba(21,39,42,.07), 0 1px 2px rgba(21,39,42,.05);
+  --shadow-2:0 4px 10px rgba(21,39,42,.07), 0 18px 34px -16px rgba(21,39,42,.24);
+  --focus-ring:0 0 0 3px rgba(31,122,104,.35);
+
+  /* Tipografía */
+  --sans:var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif:var(--font-fraunces), Georgia, serif;
+  --mono:var(--font-plex), ui-monospace, monospace;
+
+  --input-bg:var(--surface-2);
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --tap-min:44px; /* tamaño táctil mínimo recomendado (WCAG 2.5.8 / Apple HIG) */
+  color-scheme:light;
+}
+
+/* Modo oscuro: sigue la preferencia del sistema (o data-theme="dark" para forzarlo). */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --brand:#35B094; --brand-strong:#8FE0C8; --brand-soft:#1C3832; --on-brand:#0F1A1B;
+    --bg:#0F1A1B; --surface:#162326; --surface-2:#1D2D2F; --line:#2B3F41; --line-strong:#446164;
+    --text:#EAF2F0; --text-2:#A9BDBB; --text-3:#8A9E9F;
+    --ok:#48B08E;     --ok-soft:#1E3730;     --ok-ink:#8FD9BE;
+    --warn:#D3AD73;   --warn-soft:#3A3122;   --warn-ink:#E8CC9C;
+    --danger:#E8825A; --danger-soft:#3A251D; --danger-ink:#F2AE92;
+    --info:#6FA3D8;   --info-soft:#1C2B3B;   --info-ink:#A9C9EA;
+    --shadow-1:0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+    --shadow-2:0 4px 10px rgba(0,0,0,.3), 0 20px 36px -16px rgba(0,0,0,.5);
+    --focus-ring:0 0 0 3px rgba(53,176,148,.45);
+    --input-bg:#1F3134;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --brand:#35B094; --brand-strong:#8FE0C8; --brand-soft:#1C3832; --on-brand:#0F1A1B;
+  --bg:#0F1A1B; --surface:#162326; --surface-2:#1D2D2F; --line:#2B3F41; --line-strong:#446164;
+  --text:#EAF2F0; --text-2:#A9BDBB; --text-3:#8A9E9F;
+  --ok:#48B08E;     --ok-soft:#1E3730;     --ok-ink:#8FD9BE;
+  --warn:#D3AD73;   --warn-soft:#3A3122;   --warn-ink:#E8CC9C;
+  --danger:#E8825A; --danger-soft:#3A251D; --danger-ink:#F2AE92;
+  --info:#6FA3D8;   --info-soft:#1C2B3B;   --info-ink:#A9C9EA;
+  --shadow-1:0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+  --shadow-2:0 4px 10px rgba(0,0,0,.3), 0 20px 36px -16px rgba(0,0,0,.5);
+  --focus-ring:0 0 0 3px rgba(53,176,148,.45);
+  --input-bg:#1F3134;
+}
+
+/* Alias de los nombres anteriores (no usar en código nuevo). */
+:root{
+  --primary:var(--brand); --primary-dark:var(--brand-strong); --primary-soft:var(--brand-soft);
+  --surface-alt:var(--surface-2); --border:var(--line); --border-strong:var(--line-strong);
+  --ink:var(--text); --ink-soft:var(--text-2); --ink-faint:var(--text-3);
+  --accent:var(--warn); --accent-soft:var(--warn-soft);
+  --sage:var(--ok); --sage-soft:var(--ok-soft);
+  --rust:var(--danger); --rust-soft:var(--danger-soft);
+  --radius-sm:var(--r-sm); --radius:var(--r-md); --radius-lg:var(--r-lg);
+  --shadow-sm:var(--shadow-1); --shadow:var(--shadow-2);
+}

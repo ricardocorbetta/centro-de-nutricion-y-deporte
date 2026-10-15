@@ -12,6 +12,13 @@ export default function FeedbackBoton({ pantalla }) {
   const [abierto, setAbierto] = useState(false);
   const [vista, setVista] = useState('enviar'); // 'enviar' | 'mis-pedidos'
 
+  // Otras pantallas (ej. Inicio) pueden abrir directo "Mis pedidos".
+  useEffect(() => {
+    function abrir() { setVista('mis-pedidos'); setAbierto(true); }
+    window.addEventListener('abrir-sugerencias', abrir);
+    return () => window.removeEventListener('abrir-sugerencias', abrir);
+  }, []);
+
   return (
     <>
       <button type="button" className="mej-fab" onClick={() => setAbierto(true)}>
@@ -56,7 +63,7 @@ function NuevoPedido({ pantalla, onEnviado }) {
     form.append('pantalla', pantalla || (typeof window !== 'undefined' ? window.location.pathname : ''));
     capturas.forEach(f => form.append('capturas', f));
     try {
-      const res = await fetch('/api/mejoras', { method: 'POST', body: form });
+      const res = await fetch('/api/mejoras', { method: 'POST', body: form, headers: { 'x-sin-aviso': '1' } });
       const data = await leerJson(res);
       if (!res.ok) throw new Error(data.error || 'No se pudo enviar el pedido.');
       setTipo(''); setTitulo(''); setDetalle(''); setCapturas([]);
@@ -161,7 +168,7 @@ function DetalleClinica({ mejora, onCambio }) {
   async function post(url, body, okMsg) {
     setEstado({ ocupado: true, msg: '', err: false });
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sin-aviso': '1' }, body: JSON.stringify(body) });
       const data = await leerJson(res);
       if (!res.ok) throw new Error(data.error || 'No se pudo guardar.');
       setTexto('');
