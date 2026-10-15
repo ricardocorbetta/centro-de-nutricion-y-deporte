@@ -13,7 +13,12 @@ Roles: admin de plataforma (sin empresa, ve el Panel EULALIA en `app/XenomAdmin.
 
 ## Stack
 - Next.js 14 (App Router) + React 18, JavaScript (sin TypeScript). Desplegado en Vercel: push a `main`
-  dispara el deploy. Remoto: `github.com/ricardocorbetta/centro-de-nutricion-y-deporte`.
+  dispara el deploy. Remoto: `github.com/ricardocorbetta/centro-de-nutricion-y-deporte` (repo PÚBLICO de la
+  cuenta `ricardocorbetta`; en esta compu se sube con `ricardocorbetta-cell`, colaboradora con escritura).
+- Producción: https://centro-de-nutricion-y-deporte-vt6l.vercel.app (proyecto Vercel `...-vt6l`). Hay un
+  segundo proyecto Vercel `centro-de-nutricion-y-deporte` conectado al mismo repo que falla en todos los
+  deploys desde antes de 2026-10-15: no es la app en uso. El estado del deploy se lee con
+  `gh api repos/ricardocorbetta/centro-de-nutricion-y-deporte/commits/<sha>/status`.
 - Supabase Postgres, proyecto "cnd-cipolletti-panel" (`jvutndjtqknbliayqkwl`), plan free: se pausa tras ~7 días sin uso
   y la app deja de andar; se reanuda con "Restore project" en el dashboard. `pacientes.id` es bigint y `empresas.id` es uuid.
 - Toda la lectura/escritura pasa por API routes con `lib/supabaseAdmin.js` (service_role). Nunca

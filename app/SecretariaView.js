@@ -7,6 +7,7 @@ import { fmtMoney } from '../lib/stats';
 import AgendaBuilder from './AgendaBuilder';
 import PacienteSelector from './PacienteSelector';
 import Avatar from './Avatar';
+import FeedbackBoton from './FeedbackBoton';
 import { hoyAR } from '../lib/fechas';
 
 function todayISO() { return hoyAR(); }
@@ -209,6 +210,7 @@ export default function SecretariaView({ name, username, empresa }) {
 
         <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'}</footer>
       </div>
+      <FeedbackBoton pantalla={tab === 'agenda' ? 'Agenda (secretaría)' : 'Caja (secretaría)'} />
     </>
   );
 }

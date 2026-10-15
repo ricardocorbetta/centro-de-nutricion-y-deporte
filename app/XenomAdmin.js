@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSkeleton from './LoadingSkeleton';
+import MejorasBandeja from './MejorasBandeja';
 
 function slugPreview(s) {
   return (s || '').toLowerCase()
@@ -204,6 +205,8 @@ export default function XenomAdmin({ name, username }) {
             </table>
           )}
         </div></section>
+
+        <MejorasBandeja />
 
         <footer>EULALIA — panel de administración de la plataforma</footer>
       </div>

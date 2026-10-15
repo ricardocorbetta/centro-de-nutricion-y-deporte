@@ -23,6 +23,7 @@ import BibliotecaAdmin from './BibliotecaAdmin';
 import CarteleraAdmin from './CarteleraAdmin';
 import XenomAdmin from './XenomAdmin';
 import Avatar from './Avatar';
+import FeedbackBoton from './FeedbackBoton';
 
 export default function AppClient({ role, name, username, esAdminPlataforma, empresa }) {
   if (esAdminPlataforma) return <XenomAdmin name={name} username={username} />;
@@ -446,6 +447,7 @@ function Dashboard({
           <footer>EULALIA — panel de gestión para {empresa?.nombre || 'tu centro'} · datos en Supabase, actualizables desde este panel</footer>
         </main>
       </div>
+      <FeedbackBoton pantalla={NAV.find(n => n.id === activeSection)?.label || activeSection} />
     </>
   );
 }
